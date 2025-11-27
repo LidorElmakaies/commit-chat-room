@@ -1,24 +1,42 @@
-const Colors = {
-  primary: "#6849a7",
-  warning: "#cc475a",
+/**
+ * App Theme Colors
+ *
+ * Light: Clean Blue/White theme (Professional, Airy)
+ * Dark: Deep Purple/Black theme (Modern, High Contrast)
+ */
 
-  dark: {
-    text: "#d4d4d4",
-    title: "#fff",
-    background: "#252231",
-    navBackground: "#201e2b",
-    iconColor: "#9591a5",
-    iconColorFocused: "#fff",
-    uiBackground: "#2f2b3d",
-  },
+const tintColorLight = "#3B82F6"; // Blue 500
+const tintColorDark = "#A855F7"; // Purple 500
+
+export const Colors = {
   light: {
-    text: "#625f72",
-    title: "#201e2b",
-    background: "#e0dfe8",
-    navBackground: "#e8e7ef",
-    iconColor: "#686477",
-    iconColorFocused: "#201e2b",
-    uiBackground: "#d6d5e1",
+    primary: "#3B82F6", // Default primary (Blue)
+    text: "#1E293B", // Slate 800
+    textSecondary: "#64748B", // Slate 500
+    background: "#F5F7FA", // Very light blue-grey
+    uiBackground: "#FFFFFF", // Pure white cards
+    tint: tintColorLight,
+    iconColor: "#64748B", // Slate 500
+    iconColorFocused: tintColorLight,
+    tabIconDefault: "#64748B",
+    tabIconSelected: tintColorLight,
+    border: "#E2E8F0", // Slate 200
+    error: "#EF4444", // Red 500
+  },
+  dark: {
+    primary: "#8B5CF6", // Violet 500 (Purple)
+    text: "#F3F4F6", // Cool Gray 100
+    textSecondary: "#9CA3AF", // Cool Gray 400
+    background: "#0F0E13", // Deep Black/Purple
+    uiBackground: "#1D1B26", // Dark Purple-Grey Surface
+    tint: tintColorDark,
+    iconColor: "#9CA3AF", // Cool Gray 400
+    iconColorFocused: tintColorDark,
+    tabIconDefault: "#9CA3AF",
+    tabIconSelected: tintColorDark,
+    border: "#2E2C3D", // Dark Purple Border
+    error: "#CF6679", // Light Red
   },
 };
+
 export default Colors;
