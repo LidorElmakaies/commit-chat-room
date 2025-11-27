@@ -1,15 +1,17 @@
-import { Text, View } from "react-native";
-
-export default function Index() {
+import { StyleSheet, Text } from "react-native";
+import ThemedView from "../components/ThemedView";
+export default function Home() {
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text>Edit app/index.tsx to edit this screen.</Text>
-    </View>
+    <ThemedView style={styles.container}>
+      <Text>Home Screen</Text>
+    </ThemedView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
