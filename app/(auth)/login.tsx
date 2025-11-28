@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Alert, StyleSheet, Text, useColorScheme } from "react-native";
 import ThemedButton from "../../components/buttons/ThemedButton";
@@ -8,13 +8,18 @@ import ThemedUsernameInput from "../../components/inputs/ThemedUsernameInput";
 import ThemedCard from "../../components/ThemedCard";
 import ThemedView from "../../components/ThemedView";
 import { Colors } from "../../constants/Colors";
-import { matrixService } from "../../src/services/matrix/MatrixService";
+import { useAppDispatch, useAppSelector } from "../../src/store";
+import { clearError, loginUser } from "../../src/store/slices/matrixAuthSlice";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
   const colorScheme = useColorScheme() ?? "light";
   const theme = Colors[colorScheme] ?? Colors.light;
+
+  const dispatch = useAppDispatch();
+  const { loading, error, isAuthenticated } = useAppSelector(
+    (state) => state.matrixAuth
+  );
 
   const { control, handleSubmit } = useForm({
     defaultValues: {
@@ -23,17 +28,24 @@ export default function LoginScreen() {
     },
   });
 
-  const onSubmit = async (data: any) => {
-    setLoading(true);
-    try {
-      await matrixService.login(data.username, data.password);
+  // Redirect when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
       router.replace("/(tabs)");
-    } catch (error: any) {
-      console.error(error);
-      Alert.alert("Login Failed", error.message || "Something went wrong");
-    } finally {
-      setLoading(false);
     }
+  }, [isAuthenticated, router]);
+
+  // Show error alert
+  useEffect(() => {
+    if (error) {
+      Alert.alert("Login Failed", error, [
+        { text: "OK", onPress: () => dispatch(clearError()) },
+      ]);
+    }
+  }, [dispatch, error]);
+
+  const onSubmit = (data: any) => {
+    dispatch(loginUser({ username: data.username, password: data.password }));
   };
 
   return (

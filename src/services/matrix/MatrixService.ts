@@ -70,7 +70,14 @@ export class MatrixService {
   /**
    * Initialize and login a new client
    */
-  public async login(username: string, password: string): Promise<string> {
+  public async login(
+    username: string,
+    password: string
+  ): Promise<{
+    userId: string;
+    accessToken: string;
+    deviceId: string;
+  }> {
     console.debug("[MatrixService] Creating client...");
 
     // Create temporary client for login
@@ -107,11 +114,41 @@ export class MatrixService {
 
       this.authIsLoaded$.next(true);
 
-      return loginResult.user_id;
+      return {
+        userId: loginResult.user_id,
+        accessToken: loginResult.access_token,
+        deviceId: loginResult.device_id,
+      };
     } catch (error) {
       console.error("[MatrixService] Login failed:", error);
       throw error;
     }
+  }
+
+  /**
+   * Login with existing access token (Restoring session)
+   */
+  public async loginWithToken(
+    userId: string,
+    accessToken: string,
+    deviceId: string
+  ): Promise<void> {
+    console.debug("[MatrixService] Restoring session with token...");
+
+    this.client = createClient({
+      baseUrl: this.homeserverUrl,
+      accessToken: accessToken,
+      userId: userId,
+      deviceId: deviceId,
+    });
+
+    this.setupEventListeners();
+
+    // Auto-start sync
+    await this.start();
+
+    this.authIsLoaded$.next(true);
+    console.debug("[MatrixService] Session restored");
   }
 
   /**

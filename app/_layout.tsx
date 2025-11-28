@@ -1,15 +1,17 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "react-native";
+import { Provider } from "react-redux";
 import { Colors } from "../constants/Colors";
 import "../src/services/matrix/polyfills";
+import { store } from "../src/store";
 
 const RootLayout = () => {
   const colorScheme = useColorScheme() ?? "light";
   const theme = Colors[colorScheme];
 
   return (
-    <>
+    <Provider store={store}>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
       <Stack
         screenOptions={{
@@ -25,7 +27,7 @@ const RootLayout = () => {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       </Stack>
-    </>
+    </Provider>
   );
 };
 
