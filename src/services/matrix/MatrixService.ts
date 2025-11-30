@@ -29,7 +29,7 @@ export class MatrixService {
 
   // Observables
   public authIsLoaded$ = new BehaviorSubject<boolean>(false);
-  public syncState$ = new BehaviorSubject<SyncState | null>(null);
+  public syncState$ = new BehaviorSubject<SyncStateData | null>(null);
   public roomMessage$ = new Subject<{ event: MatrixEvent; room: Room }>();
   public roomMember$ = new Subject<{
     event: MatrixEvent;
@@ -73,11 +73,7 @@ export class MatrixService {
   public async login(
     username: string,
     password: string
-  ): Promise<{
-    userId: string;
-    accessToken: string;
-    deviceId: string;
-  }> {
+  ): Promise<{ userId: string; accessToken: string; deviceId: string }> {
     console.debug("[MatrixService] Creating client...");
 
     // Create temporary client for login
@@ -256,8 +252,10 @@ export class MatrixService {
       (state: SyncState, prevState: SyncState | null, data?: SyncStateData) => {
         if (state !== prevState) {
           console.debug(`[MatrixService] Sync state: ${state}`);
-          this.syncState$.next(state);
         }
+        // The syncState$ subject should emit the data payload from the sync,
+        // which is in the `data` parameter, not the `state` enum.
+        this.syncState$.next(data || null);
       }
     );
 
@@ -294,5 +292,4 @@ export class MatrixService {
   }
 }
 
-// Export singleton instance
 export const matrixService = new MatrixService();

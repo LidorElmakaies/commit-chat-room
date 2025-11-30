@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { matrixService } from "../../services/matrix/MatrixService";
 
-interface MatrixAuthState {
+export interface MatrixAuthState {
   userId: string | null;
   accessToken: string | null;
   deviceId: string | null;
@@ -123,4 +123,3 @@ const matrixAuthSlice = createSlice({
 
 export const { clearError } = matrixAuthSlice.actions;
 export default matrixAuthSlice.reducer;
-

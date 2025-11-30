@@ -2,9 +2,10 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "react-native";
 import { Provider } from "react-redux";
+import { PersistGate } from "redux-persist/integration/react";
 import { Colors } from "../constants/Colors";
 import "../src/services/matrix/polyfills";
-import { store } from "../src/store";
+import { persistor, store } from "../src/store";
 
 const RootLayout = () => {
   const colorScheme = useColorScheme() ?? "light";
@@ -12,21 +13,19 @@ const RootLayout = () => {
 
   return (
     <Provider store={store}>
-      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-      <Stack
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: theme.background,
-          },
-          headerTintColor: theme.text,
-          contentStyle: {
-            backgroundColor: theme.background,
-          },
-        }}
-      >
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      </Stack>
+      <PersistGate loading={null} persistor={persistor}>
+        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: theme.background },
+          }}
+        >
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+        </Stack>
+      </PersistGate>
     </Provider>
   );
 };

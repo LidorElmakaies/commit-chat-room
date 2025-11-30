@@ -8,13 +8,15 @@ import ThemedUsernameInput from "../../components/inputs/ThemedUsernameInput";
 import ThemedCard from "../../components/ThemedCard";
 import ThemedView from "../../components/ThemedView";
 import { Colors } from "../../constants/Colors";
+import { commonStyles } from "../../constants/Styles";
+import Typography from "../../constants/Typography";
 import { useAppDispatch, useAppSelector } from "../../src/store";
 import { clearError, loginUser } from "../../src/store/slices/matrixAuthSlice";
 
 export default function LoginScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? "light";
-  const theme = Colors[colorScheme] ?? Colors.light;
+  const theme = Colors[colorScheme];
 
   const dispatch = useAppDispatch();
   const { loading, error, isAuthenticated } = useAppSelector(
@@ -49,12 +51,14 @@ export default function LoginScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={commonStyles.container}>
       <ThemedCard style={styles.card}>
-        <Text style={[styles.title, { color: theme.primary }]}>
+        <Text style={[Typography.title, { color: theme.primary }]}>
           Welcome Back
         </Text>
-        <Text style={styles.subtitle}>Sign in to your Matrix account</Text>
+        <Text style={[Typography.subtitle, { color: theme.textSecondary }]}>
+          Sign in to continue
+        </Text>
 
         <ThemedUsernameInput
           control={control}
@@ -80,11 +84,6 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 20,
-  },
   card: {
     width: "100%",
     maxWidth: 400,
@@ -104,5 +103,8 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 10,
+  },
+  buttonContainer: {
+    marginTop: 16,
   },
 });
