@@ -1,74 +1,57 @@
 import React from "react";
 import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
   TouchableOpacity,
-  TouchableOpacityProps,
-  useColorScheme,
+  Text,
+  ActivityIndicator,
+  StyleProp,
+  ViewStyle,
+  TextStyle,
 } from "react-native";
-import { Colors } from "../../constants/Colors";
+import { useTheme } from "@react-navigation/native";
+import { themedButtonStyles } from "../../constants/ComponentStyles";
 
-interface ThemedButtonProps extends TouchableOpacityProps {
+interface ThemedButtonProps {
   title: string;
+  onPress: () => void;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   loading?: boolean;
-  variant?: "primary" | "secondary" | "outline";
 }
 
 export default function ThemedButton({
   title,
-  loading = false,
-  variant = "primary",
+  onPress,
   style,
-  disabled,
-  ...props
+  textStyle,
+  loading = false,
+  ...otherProps
 }: ThemedButtonProps) {
-  const colorScheme = useColorScheme() ?? "light";
-  const theme = Colors[colorScheme] ?? Colors.light;
-
-  const backgroundColor =
-    variant === "primary"
-      ? theme.primary
-      : variant === "secondary"
-      ? theme.textSecondary
-      : "transparent";
-
-  const textColor = variant === "outline" ? theme.primary : "#FFF";
-  const borderWidth = variant === "outline" ? 1 : 0;
+  const { colors } = useTheme();
 
   return (
     <TouchableOpacity
       style={[
-        styles.button,
-        { backgroundColor, borderWidth, borderColor: theme.primary },
-        disabled && styles.disabled,
+        themedButtonStyles.button,
+        { backgroundColor: colors.primary },
         style,
       ]}
-      disabled={disabled || loading}
-      {...props}
+      onPress={onPress}
+      disabled={loading}
+      {...otherProps}
     >
       {loading ? (
-        <ActivityIndicator color={textColor} />
+        <ActivityIndicator color={colors.card} />
       ) : (
-        <Text style={[styles.text, { color: textColor }]}>{title}</Text>
+        <Text
+          style={[
+            themedButtonStyles.text,
+            { color: colors.card },
+            textStyle,
+          ]}
+        >
+          {title}
+        </Text>
       )}
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-  },
-  text: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  disabled: {
-    opacity: 0.6,
-  },
-});

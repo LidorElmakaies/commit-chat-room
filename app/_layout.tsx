@@ -1,33 +1,34 @@
+import "../polyfills";
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from "@react-navigation/native";
 import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { useColorScheme } from "react-native";
+import "react-native-reanimated";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
-import { Colors } from "../constants/Colors";
-import "../src/services/matrix/polyfills";
+import { useColorScheme } from "react-native";
 import { persistor, store } from "../src/store";
+import { StatusBar } from "expo-status-bar";
 
-const RootLayout = () => {
-  const colorScheme = useColorScheme() ?? "light";
-  const theme = Colors[colorScheme];
+export default function RootLayout() {
+  const colorScheme = useColorScheme();
 
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: theme.background },
-          }}
+        <ThemeProvider
+          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
         >
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(tabs)" />
-        </Stack>
+          <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+          <Stack>
+            <Stack.Screen name="(app)" options={{ headerShown: false }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+        </ThemeProvider>
       </PersistGate>
     </Provider>
   );
-};
-
-export default RootLayout;
+}

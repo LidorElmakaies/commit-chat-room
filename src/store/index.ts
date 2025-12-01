@@ -1,8 +1,19 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
-import { persistReducer, persistStore } from "redux-persist";
+import {
+  FLUSH,
+  PAUSE,
+  PERSIST,
+  persistReducer,
+  persistStore,
+  PURGE,
+  REGISTER,
+  REHYDRATE,
+} from "redux-persist";
 import matrixAuthReducer from "./slices/matrixAuthSlice";
+import roomReducer from "./slices/roomSlice"; // Import the new reducer
+import { sessionMiddleware } from "./middleware/sessionMiddleware";
 
 // Configuration for redux-persist
 const persistConfig = {
@@ -13,7 +24,10 @@ const persistConfig = {
 
 const rootReducer = combineReducers({
   matrixAuth: matrixAuthReducer,
+  room: roomReducer, // Add the room reducer
 });
+
+export type RootState = ReturnType<typeof rootReducer>;
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
@@ -22,13 +36,14 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       // This is important to avoid warnings with redux-persist
-      serializableCheck: false,
-    }),
+      serializableCheck: {
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+      },
+    }).concat(sessionMiddleware), // Add the custom middleware here
 });
 
 export const persistor = persistStore(store); // Create the persistor
 
-export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 
 // Use throughout your app instead of plain `useDispatch` and `useSelector`

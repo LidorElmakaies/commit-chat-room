@@ -11,8 +11,12 @@ import {
   RoomMemberEvent,
   SyncState,
   SyncStateData,
+  Preset,
+  Visibility,
+  EventTimeline,
 } from "matrix-js-sdk";
 import { BehaviorSubject, Subject } from "rxjs";
+import { RoomSummary, RoomVisibility } from "../../types";
 
 /**
  * Matrix Service
@@ -150,13 +154,49 @@ export class MatrixService {
   /**
    * Join a room by ID or alias
    */
-  public async joinRoom(roomIdOrAlias: string): Promise<Room> {
+  public async joinRoom(roomIdOrAlias: string): Promise<RoomSummary> {
     if (!this.client) throw new Error("Client not initialized");
 
     console.debug(`[MatrixService] Joining room: ${roomIdOrAlias}`);
     const room = await this.client.joinRoom(roomIdOrAlias);
     console.debug(`[MatrixService] Joined room: ${room.roomId}`);
-    return room;
+
+    const roomState = room.getLiveTimeline().getState(EventTimeline.FORWARDS);
+    const topicEvent = roomState?.getStateEvents("m.room.topic", "");
+    const topic = topicEvent?.getContent()?.topic;
+
+    return {
+      roomId: room.roomId,
+      name: room.name,
+      topic: topic,
+    };
+  }
+
+  /**
+   * Create a new room
+   */
+  public async createRoom(options: {
+    name: string;
+    topic?: string;
+    visibility: "public" | "private";
+  }): Promise<string> {
+    if (!this.client) throw new Error("Client not initialized");
+
+    console.debug(`[MatrixService] Creating room: ${options.name}`);
+    const { room_id } = await this.client.createRoom({
+      preset:
+        options.visibility === "private"
+          ? Preset.PrivateChat
+          : Preset.PublicChat,
+      visibility:
+        options.visibility === "public"
+          ? Visibility.Public
+          : Visibility.Private,
+      name: options.name,
+      topic: options.topic,
+    });
+    console.debug(`[MatrixService] Created room with ID: ${room_id}`);
+    return room_id;
   }
 
   /**
@@ -179,9 +219,23 @@ export class MatrixService {
   /**
    * Get list of joined rooms
    */
-  public getJoinedRooms(): Room[] {
+  public getJoinedRooms(): RoomSummary[] {
     if (!this.client) return [];
-    return this.client.getRooms();
+
+    const rooms = this.client.getRooms();
+    // Filter out rooms that are spaces
+    const chatRooms = rooms.filter((room) => !room.isSpaceRoom()); //i want to get rooms not workspaces/spaces
+
+    return chatRooms.map((room) => {
+      const roomState = room.getLiveTimeline().getState(EventTimeline.FORWARDS);
+      const topicEvent = roomState?.getStateEvents("m.room.topic", "");
+      const topic = topicEvent?.getContent()?.topic;
+      return {
+        roomId: room.roomId,
+        name: room.name,
+        topic: topic,
+      };
+    });
   }
 
   /**

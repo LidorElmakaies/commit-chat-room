@@ -1,12 +1,13 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { matrixService } from "../../services/matrix/MatrixService";
+import { LoadingState, LoginCredentials, MatrixSession } from "../../types";
 
 export interface MatrixAuthState {
   userId: string | null;
   accessToken: string | null;
   deviceId: string | null;
   isAuthenticated: boolean;
-  loading: boolean;
+  loading: LoadingState;
   error: string | null;
 }
 
@@ -15,19 +16,19 @@ const initialState: MatrixAuthState = {
   accessToken: null,
   deviceId: null,
   isAuthenticated: false,
-  loading: false,
+  loading: LoadingState.Idle,
   error: null,
 };
 
 // Async Thunk for Login
 export const loginUser = createAsyncThunk(
   "matrixAuth/login",
-  async (
-    { username, password }: { username: string; password: string },
-    { rejectWithValue }
-  ) => {
+  async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
-      const result = await matrixService.login(username, password);
+      const result = await matrixService.login(
+        credentials.username,
+        credentials.password
+      );
       return result;
     } catch (error: any) {
       return rejectWithValue(error.message || "Login failed");
@@ -38,17 +39,14 @@ export const loginUser = createAsyncThunk(
 // Async Thunk for Restoring Session (if we had persisted data)
 export const restoreSession = createAsyncThunk(
   "matrixAuth/restore",
-  async (
-    {
-      userId,
-      accessToken,
-      deviceId,
-    }: { userId: string; accessToken: string; deviceId: string },
-    { rejectWithValue }
-  ) => {
+  async (session: MatrixSession, { rejectWithValue }) => {
     try {
-      await matrixService.loginWithToken(userId, accessToken, deviceId);
-      return { userId, accessToken, deviceId };
+      await matrixService.loginWithToken(
+        session.userId,
+        session.accessToken,
+        session.deviceId
+      );
+      return session;
     } catch (error: any) {
       return rejectWithValue(error.message || "Restore failed");
     }
@@ -77,34 +75,34 @@ const matrixAuthSlice = createSlice({
   extraReducers: (builder) => {
     // Login
     builder.addCase(loginUser.pending, (state) => {
-      state.loading = true;
+      state.loading = LoadingState.Pending;
       state.error = null;
     });
     builder.addCase(loginUser.fulfilled, (state, action) => {
-      state.loading = false;
+      state.loading = LoadingState.Succeeded;
       state.isAuthenticated = true;
       state.userId = action.payload.userId;
       state.accessToken = action.payload.accessToken;
       state.deviceId = action.payload.deviceId;
     });
     builder.addCase(loginUser.rejected, (state, action) => {
-      state.loading = false;
+      state.loading = LoadingState.Failed;
       state.error = action.payload as string;
     });
 
     // Restore
     builder.addCase(restoreSession.pending, (state) => {
-      state.loading = true;
+      state.loading = LoadingState.Pending;
     });
     builder.addCase(restoreSession.fulfilled, (state, action) => {
-      state.loading = false;
+      state.loading = LoadingState.Succeeded;
       state.isAuthenticated = true;
       state.userId = action.payload.userId;
       state.accessToken = action.payload.accessToken;
       state.deviceId = action.payload.deviceId;
     });
     builder.addCase(restoreSession.rejected, (state) => {
-      state.loading = false;
+      state.loading = LoadingState.Failed;
       state.isAuthenticated = false;
       state.userId = null;
       state.accessToken = null;
