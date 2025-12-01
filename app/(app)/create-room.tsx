@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
+import { useRouter } from "expo-router";
 import {
   ThemedView,
   ThemedTextInput,
@@ -21,6 +22,7 @@ import {
 
 const CreateRoomScreen = () => {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const { loading, error } = useAppSelector((state) => state.room);
 
   const {
@@ -33,8 +35,12 @@ const CreateRoomScreen = () => {
     },
   });
 
-  const handleCreateRoom = (data: CreateRoomOptions) => {
-    dispatch(createRoom(data));
+  const handleCreateRoom = async (data: CreateRoomOptions) => {
+    const resultAction = await dispatch(createRoom(data));
+    if (createRoom.fulfilled.match(resultAction)) {
+      const newRoomId = resultAction.payload;
+      router.replace(`/room/${newRoomId}`);
+    }
   };
 
   return (

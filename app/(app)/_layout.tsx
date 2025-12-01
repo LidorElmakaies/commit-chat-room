@@ -1,9 +1,10 @@
-import { Redirect, Stack, useRouter } from "expo-router";
+import { Redirect, Tabs, useRouter } from "expo-router";
 import React from "react";
 import { useAppDispatch, useAppSelector } from "../../src/store";
 import { logoutUser } from "../../src/store/slices/matrixAuthSlice";
 import { View } from "react-native";
 import { HomeButton, LogoutButton } from "../../components";
+import { MaterialIcons } from "@expo/vector-icons";
 
 export default function AppLayout() {
   const router = useRouter();
@@ -19,41 +20,41 @@ export default function AppLayout() {
   };
 
   const handleHome = () => {
+    // Navigate to the default tab
     router.push("/(app)");
   };
 
-  const headerRightWithHome = () => (
+  const headerRight = () => (
     <View style={{ flexDirection: "row", alignItems: "center" }}>
       <HomeButton onPress={handleHome} style={{ marginRight: 15 }} />
-      <LogoutButton onPress={handleLogout} />
+      <LogoutButton onPress={handleLogout} style={{ marginRight: 15 }} />
     </View>
   );
 
   return (
-    <Stack>
-      <Stack.Screen
+    <Tabs
+      screenOptions={{
+        headerRight: headerRight,
+      }}
+    >
+      <Tabs.Screen
         name="index"
         options={{
-          title: "Room Management",
-          headerRight: () => (
-            <LogoutButton onPress={handleLogout} style={{ marginRight: 15 }} />
+          title: "Join Room",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="meeting-room" size={size} color={color} />
           ),
         }}
       />
-      <Stack.Screen
+      <Tabs.Screen
         name="create-room"
         options={{
           title: "Create Room",
-          headerRight: headerRightWithHome,
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="add-circle" size={size} color={color} />
+          ),
         }}
       />
-      <Stack.Screen
-        name="join-room"
-        options={{
-          title: "Join Room",
-          headerRight: headerRightWithHome,
-        }}
-      />
-    </Stack>
+    </Tabs>
   );
 }

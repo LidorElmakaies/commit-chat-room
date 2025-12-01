@@ -12,7 +12,7 @@ import {
   REHYDRATE,
 } from "redux-persist";
 import matrixAuthReducer from "./slices/matrixAuthSlice";
-import roomReducer from "./slices/roomSlice"; // Import the new reducer
+import roomReducer from "./slices/roomSlice";
 import { sessionMiddleware } from "./middleware/sessionMiddleware";
 
 // Configuration for redux-persist
@@ -24,7 +24,7 @@ const persistConfig = {
 
 const rootReducer = combineReducers({
   matrixAuth: matrixAuthReducer,
-  room: roomReducer, // Add the room reducer
+  room: roomReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;

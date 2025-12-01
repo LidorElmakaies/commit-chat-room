@@ -15,8 +15,9 @@ import {
   Visibility,
   EventTimeline,
 } from "matrix-js-sdk";
-import { BehaviorSubject, Subject } from "rxjs";
-import { RoomSummary, RoomVisibility } from "../../types";
+import { BehaviorSubject, Subject, firstValueFrom } from "rxjs";
+import { filter, take } from "rxjs/operators";
+import { CreateRoomOptions, RoomSummary, RoomVisibility } from "../../types";
 
 /**
  * Matrix Service
@@ -33,7 +34,7 @@ export class MatrixService {
 
   // Observables
   public authIsLoaded$ = new BehaviorSubject<boolean>(false);
-  public syncState$ = new BehaviorSubject<SyncStateData | null>(null);
+  public syncState$ = new BehaviorSubject<SyncState | null>(null);
   public roomMessage$ = new Subject<{ event: MatrixEvent; room: Room }>();
   public roomMember$ = new Subject<{
     event: MatrixEvent;
@@ -155,6 +156,7 @@ export class MatrixService {
    * Join a room by ID or alias
    */
   public async joinRoom(roomIdOrAlias: string): Promise<RoomSummary> {
+    await this.waitForClient();
     if (!this.client) throw new Error("Client not initialized");
 
     console.debug(`[MatrixService] Joining room: ${roomIdOrAlias}`);
@@ -175,21 +177,18 @@ export class MatrixService {
   /**
    * Create a new room
    */
-  public async createRoom(options: {
-    name: string;
-    topic?: string;
-    visibility: "public" | "private";
-  }): Promise<string> {
+  public async createRoom(options: CreateRoomOptions): Promise<string> {
+    await this.waitForClient();
     if (!this.client) throw new Error("Client not initialized");
 
     console.debug(`[MatrixService] Creating room: ${options.name}`);
     const { room_id } = await this.client.createRoom({
       preset:
-        options.visibility === "private"
+        options.visibility === RoomVisibility.Private
           ? Preset.PrivateChat
           : Preset.PublicChat,
       visibility:
-        options.visibility === "public"
+        options.visibility === RoomVisibility.Public
           ? Visibility.Public
           : Visibility.Private,
       name: options.name,
@@ -219,7 +218,8 @@ export class MatrixService {
   /**
    * Get list of joined rooms
    */
-  public getJoinedRooms(): RoomSummary[] {
+  public async getJoinedRooms(): Promise<RoomSummary[]> {
+    await this.waitForClient();
     if (!this.client) return [];
 
     const rooms = this.client.getRooms();
@@ -309,7 +309,7 @@ export class MatrixService {
         }
         // The syncState$ subject should emit the data payload from the sync,
         // which is in the `data` parameter, not the `state` enum.
-        this.syncState$.next(data || null);
+        this.syncState$.next(state);
       }
     );
 
@@ -342,6 +342,23 @@ export class MatrixService {
         );
         this.roomMember$.next({ event, member });
       }
+    );
+  }
+
+  /**
+   * Waits for the client to be in a state where it can perform actions.
+   */
+  private async waitForClient(): Promise<void> {
+    const currentState = this.syncState$.getValue();
+    if (currentState === "PREPARED" || currentState === "SYNCING") {
+      return;
+    }
+
+    await firstValueFrom(
+      this.syncState$.pipe(
+        filter((state) => state === "PREPARED" || state === "SYNCING"),
+        take(1)
+      )
     );
   }
 }
