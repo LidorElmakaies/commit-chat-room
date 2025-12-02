@@ -1,7 +1,7 @@
 import React from "react";
 import { FlatList, FlatListProps, TouchableOpacity, View } from "react-native";
 import { useTheme } from "@react-navigation/native";
-import { ThemedText } from "./";
+import { ThemedText } from "./text";
 import { themedListStyles } from "../constants/ComponentStyles";
 
 export interface ThemedListItem {

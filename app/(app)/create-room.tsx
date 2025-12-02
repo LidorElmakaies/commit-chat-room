@@ -12,13 +12,9 @@ import {
 } from "../../components";
 import { commonStyles } from "../../constants/Styles";
 import { useForm, Controller } from "react-hook-form";
-import { useAppDispatch, useAppSelector } from "../../src/store";
+import { useAppDispatch, useAppSelector } from "../../src/store/types";
 import { createRoom } from "../../src/store/slices/roomSlice";
-import {
-  CreateRoomOptions,
-  LoadingState,
-  RoomVisibility,
-} from "../../src/types";
+import { CreateRoomOptions, RoomVisibility, FetchState } from "../../src/types";
 
 const CreateRoomScreen = () => {
   const dispatch = useAppDispatch();
@@ -97,7 +93,7 @@ const CreateRoomScreen = () => {
           title="Create Room"
           onPress={handleSubmit(handleCreateRoom)}
           style={{ marginTop: 24 }}
-          loading={loading === LoadingState.Pending}
+          loading={loading === FetchState.Pending}
         />
       </ThemedCard>
     </ThemedView>

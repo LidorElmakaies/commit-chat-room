@@ -7,8 +7,10 @@ import {
 } from "react-native";
 import { useTheme } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { ThemedList, ThemedText, ThemedView } from ".";
 import { themedDropdownStyles } from "../constants/ComponentStyles";
+import ThemedList from "./ThemedList";
+import { ThemedText } from "./text";
+import ThemedView from "./ThemedView";
 
 interface ThemedDropdownProps {
   options: string[];

@@ -1,13 +1,13 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { matrixService } from "../../services/matrix/MatrixService";
-import { LoadingState, LoginCredentials, MatrixSession } from "../../types";
+import { LoginCredentials, MatrixSession, LoginState } from "../../types";
 
 export interface MatrixAuthState {
   userId: string | null;
   accessToken: string | null;
   deviceId: string | null;
   isAuthenticated: boolean;
-  loading: LoadingState;
+  loading: LoginState;
   error: string | null;
 }
 
@@ -16,20 +16,19 @@ const initialState: MatrixAuthState = {
   accessToken: null,
   deviceId: null,
   isAuthenticated: false,
-  loading: LoadingState.Idle,
+  loading: LoginState.Idle,
   error: null,
 };
 
 // Async Thunk for Login
-export const loginUser = createAsyncThunk(
+export const login = createAsyncThunk(
   "matrixAuth/login",
-  async (credentials: LoginCredentials, { rejectWithValue }) => {
+  async (credentials: LoginCredentials, { dispatch, rejectWithValue }) => {
     try {
-      const result = await matrixService.login(
-        credentials.username,
-        credentials.password
-      );
-      return result;
+      dispatch(setLoading(LoginState.Pending));
+      const session = await matrixService.login(credentials);
+      dispatch(loginSuccess(session));
+      return session;
     } catch (error: any) {
       return rejectWithValue(error.message || "Login failed");
     }
@@ -38,14 +37,11 @@ export const loginUser = createAsyncThunk(
 
 // Async Thunk for Restoring Session (if we had persisted data)
 export const restoreSession = createAsyncThunk(
-  "matrixAuth/restore",
-  async (session: MatrixSession, { rejectWithValue }) => {
+  "matrixAuth/restoreSession",
+  async (session: MatrixSession, { dispatch, rejectWithValue }) => {
     try {
-      await matrixService.loginWithToken(
-        session.userId,
-        session.accessToken,
-        session.deviceId
-      );
+      await matrixService.loginWithToken(session);
+      dispatch(loginSuccess(session));
       return session;
     } catch (error: any) {
       return rejectWithValue(error.message || "Restore failed");
@@ -53,11 +49,13 @@ export const restoreSession = createAsyncThunk(
   }
 );
 
-export const logoutUser = createAsyncThunk(
+export const logout = createAsyncThunk(
   "matrixAuth/logout",
-  async (_, { rejectWithValue }) => {
+  async (_, { dispatch, rejectWithValue }) => {
     try {
+      dispatch(setLoading(LoginState.Pending));
       await matrixService.logout();
+      dispatch(logoutSuccess());
     } catch (error: any) {
       return rejectWithValue(error.message || "Logout failed");
     }
@@ -68,41 +66,58 @@ const matrixAuthSlice = createSlice({
   name: "matrixAuth",
   initialState,
   reducers: {
+    setLoading: (state, action: PayloadAction<LoginState>) => {
+      state.loading = action.payload;
+    },
+    loginSuccess: (state, action: PayloadAction<MatrixSession>) => {
+      state.loading = LoginState.Idle;
+      state.isAuthenticated = true;
+      state.userId = action.payload.userId;
+      state.accessToken = action.payload.accessToken;
+      state.deviceId = action.payload.deviceId;
+    },
+    logoutSuccess: (state) => {
+      state.userId = null;
+      state.accessToken = null;
+      state.deviceId = null;
+      state.isAuthenticated = false;
+      state.loading = LoginState.Idle;
+    },
     clearError: (state) => {
       state.error = null;
     },
   },
   extraReducers: (builder) => {
     // Login
-    builder.addCase(loginUser.pending, (state) => {
-      state.loading = LoadingState.Pending;
+    builder.addCase(login.pending, (state) => {
+      state.loading = LoginState.Pending;
       state.error = null;
     });
-    builder.addCase(loginUser.fulfilled, (state, action) => {
-      state.loading = LoadingState.Succeeded;
+    builder.addCase(login.fulfilled, (state, action) => {
+      state.loading = LoginState.Idle;
       state.isAuthenticated = true;
       state.userId = action.payload.userId;
       state.accessToken = action.payload.accessToken;
       state.deviceId = action.payload.deviceId;
     });
-    builder.addCase(loginUser.rejected, (state, action) => {
-      state.loading = LoadingState.Failed;
+    builder.addCase(login.rejected, (state, action) => {
+      state.loading = LoginState.Idle;
       state.error = action.payload as string;
     });
 
     // Restore
     builder.addCase(restoreSession.pending, (state) => {
-      state.loading = LoadingState.Pending;
+      state.loading = LoginState.Pending;
     });
     builder.addCase(restoreSession.fulfilled, (state, action) => {
-      state.loading = LoadingState.Succeeded;
+      state.loading = LoginState.Idle;
       state.isAuthenticated = true;
       state.userId = action.payload.userId;
       state.accessToken = action.payload.accessToken;
       state.deviceId = action.payload.deviceId;
     });
     builder.addCase(restoreSession.rejected, (state) => {
-      state.loading = LoadingState.Failed;
+      state.loading = LoginState.Idle;
       state.isAuthenticated = false;
       state.userId = null;
       state.accessToken = null;
@@ -110,7 +125,7 @@ const matrixAuthSlice = createSlice({
     });
 
     // Logout
-    builder.addCase(logoutUser.fulfilled, (state) => {
+    builder.addCase(logout.fulfilled, (state) => {
       state.userId = null;
       state.accessToken = null;
       state.deviceId = null;
@@ -119,5 +134,6 @@ const matrixAuthSlice = createSlice({
   },
 });
 
-export const { clearError } = matrixAuthSlice.actions;
+export const { setLoading, loginSuccess, logoutSuccess, clearError } =
+  matrixAuthSlice.actions;
 export default matrixAuthSlice.reducer;

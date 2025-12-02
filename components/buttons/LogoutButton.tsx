@@ -23,3 +23,4 @@ export default function LogoutButton({ onPress, style }: LogoutButtonProps) {
     </TouchableOpacity>
   );
 }
+

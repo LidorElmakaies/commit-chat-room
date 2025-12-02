@@ -2,22 +2,24 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { matrixService } from "../../services/matrix/MatrixService";
 import {
   CreateRoomOptions,
-  LoadingState,
+  FetchState,
   RoomSummary,
-  RoomVisibility,
+  Message,
 } from "../../types";
 
 export interface RoomState {
   currentSelectedRoomId: string | null;
-  joinedRooms: Record<string, RoomSummary>;
-  loading: LoadingState;
+  rooms: Record<string, RoomSummary>;
+  currentRoomMessages: Message[];
+  loading: FetchState;
   error: string | null;
 }
 
 const initialState: RoomState = {
   currentSelectedRoomId: null,
-  joinedRooms: {},
-  loading: LoadingState.Idle,
+  rooms: {},
+  currentRoomMessages: [],
+  loading: FetchState.Idle,
   error: null,
 };
 
@@ -26,6 +28,7 @@ export const fetchJoinedRooms = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const rooms = await matrixService.getJoinedRooms();
+      console.log("[RoomSlice] Joined rooms fetched", rooms);
       return rooms;
     } catch (error: any) {
       return rejectWithValue(error.message || "Failed to fetch joined rooms");
@@ -66,59 +69,64 @@ const roomSlice = createSlice({
       state.error = null;
     },
     selectRoom: (state, action: PayloadAction<string>) => {
-      if (state.joinedRooms[action.payload]) {
+      if (state.rooms[action.payload]) {
         state.currentSelectedRoomId = action.payload;
+        state.currentRoomMessages = [];
       }
     },
     deselectRoom: (state) => {
       state.currentSelectedRoomId = null;
+      state.currentRoomMessages = [];
+    },
+    messageReceived: (state, action: PayloadAction<Message>) => {
+      if (action.payload.roomId === state.currentSelectedRoomId) {
+        state.currentRoomMessages.push(action.payload);
+      }
     },
   },
   extraReducers: (builder) => {
     builder
-      // Create Room
       .addCase(createRoom.pending, (state) => {
-        state.loading = LoadingState.Pending;
+        state.loading = FetchState.Pending;
         state.error = null;
       })
       .addCase(createRoom.rejected, (state, action) => {
-        state.loading = LoadingState.Failed;
+        state.loading = FetchState.Failed;
         state.error = action.payload as string;
       })
-      // Join Room
       .addCase(joinRoom.pending, (state) => {
-        state.loading = LoadingState.Pending;
+        state.loading = FetchState.Pending;
         state.error = null;
       })
       .addCase(joinRoom.fulfilled, (state, action) => {
-        state.loading = LoadingState.Succeeded;
+        state.loading = FetchState.Succeeded;
         const roomData = action.payload;
-        state.joinedRooms[roomData.roomId] = roomData;
+        state.rooms[roomData.roomId] = roomData;
         state.currentSelectedRoomId = roomData.roomId;
       })
       .addCase(joinRoom.rejected, (state, action) => {
-        state.loading = LoadingState.Failed;
+        state.loading = FetchState.Failed;
         state.error = action.payload as string;
       })
-      // Fetch Joined Rooms
       .addCase(fetchJoinedRooms.pending, (state) => {
-        state.loading = LoadingState.Pending;
+        state.loading = FetchState.Pending;
         state.error = null;
       })
       .addCase(fetchJoinedRooms.fulfilled, (state, action) => {
-        state.loading = LoadingState.Succeeded;
+        state.loading = FetchState.Succeeded;
         const roomsMap: Record<string, RoomSummary> = {};
         action.payload.forEach((room) => {
           roomsMap[room.roomId] = room;
         });
-        state.joinedRooms = roomsMap;
+        state.rooms = roomsMap;
       })
       .addCase(fetchJoinedRooms.rejected, (state, action) => {
-        state.loading = LoadingState.Failed;
+        state.loading = FetchState.Failed;
         state.error = action.payload as string;
       });
   },
 });
 
-export const { clearRoomError, selectRoom, deselectRoom } = roomSlice.actions;
+export const { clearRoomError, selectRoom, deselectRoom, messageReceived } =
+  roomSlice.actions;
 export default roomSlice.reducer;

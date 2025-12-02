@@ -23,3 +23,4 @@ export default function HomeButton({ onPress, style }: HomeButtonProps) {
     </TouchableOpacity>
   );
 }
+

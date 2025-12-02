@@ -1,24 +1,28 @@
 import {
-  ClientEvent,
-  createClient,
-  EventType,
   MatrixClient,
+  createClient,
   MatrixEvent,
-  MsgType,
   Room,
-  RoomEvent,
-  RoomMember,
-  RoomMemberEvent,
-  SyncState,
-  SyncStateData,
+  ClientEvent,
   Preset,
   Visibility,
   EventTimeline,
+  EventType,
+  MsgType,
+  LoginResponse,
 } from "matrix-js-sdk";
-import { BehaviorSubject, Subject, firstValueFrom } from "rxjs";
+import { BehaviorSubject, firstValueFrom } from "rxjs";
 import { filter, take } from "rxjs/operators";
-import { CreateRoomOptions, RoomSummary, RoomVisibility } from "../../types";
-
+import {
+  LoginCredentials,
+  MatrixSession,
+  RoomSummary,
+  CreateRoomOptions,
+  RoomVisibility,
+} from "../../types";
+import { RoomMessageHandler } from "./handlers/roomMessageHandler";
+import { SyncEventHandler } from "./handlers/syncEventHandler";
+import { IEventHandler } from "./handlers/IEventHandler";
 /**
  * Matrix Service
  *
@@ -28,128 +32,60 @@ import { CreateRoomOptions, RoomSummary, RoomVisibility } from "../../types";
  * - Room events (messages, membership)
  * - Error handling
  */
-export class MatrixService {
+class MatrixService {
   private client: MatrixClient | null = null;
-  private homeserverUrl: string;
+  private readonly homeserverUrl: string;
 
-  // Observables
-  public authIsLoaded$ = new BehaviorSubject<boolean>(false);
-  public syncState$ = new BehaviorSubject<SyncState | null>(null);
-  public roomMessage$ = new Subject<{ event: MatrixEvent; room: Room }>();
-  public roomMember$ = new Subject<{
-    event: MatrixEvent;
-    member: RoomMember;
-  }>();
-
+  private syncEventHandler: SyncEventHandler | null = null;
+  private readonly timelineHandlers: IEventHandler<any>[];
+  public readonly roomMessages$;
+  private readonly _isClientReady$ = new BehaviorSubject<boolean>(false);
+  public readonly isClientReady$ = this._isClientReady$.asObservable();
   constructor(homeserverUrl: string = "https://matrix.org") {
     this.homeserverUrl = homeserverUrl;
+    let messageHandler = new RoomMessageHandler();
+    this.roomMessages$ = messageHandler.stream$;
+    this.timelineHandlers = [messageHandler];
   }
-
   // =================================================================================================
   // PUBLIC API
   // =================================================================================================
-
-  /**
-   * Get current client instance (for direct access if needed)
-   */
-  public getClient(): MatrixClient | null {
-    return this.client;
-  }
-
   /**
    * Logout and clean up
    */
   public async logout(): Promise<void> {
-    this.stop();
     if (this.client) {
+      console.debug("[MatrixService] Logout...");
+      this.client.stopClient();
       await this.client.logout();
       this.client = null;
     }
 
     // Reset state
-    this.authIsLoaded$.next(false);
-    this.syncState$.next(null);
+    this._isClientReady$.next(false);
     console.debug("[MatrixService] Logged out and state reset");
   }
 
   /**
    * Initialize and login a new client
    */
-  public async login(
-    username: string,
-    password: string
-  ): Promise<{ userId: string; accessToken: string; deviceId: string }> {
-    console.debug("[MatrixService] Creating client...");
-
-    // Create temporary client for login
-    const tempClient = createClient({
+  public async login(credentials: LoginCredentials): Promise<MatrixSession> {
+    const loginResponse = await createClient({
       baseUrl: this.homeserverUrl,
+    }).loginRequest({
+      type: "m.login.password",
+      user: credentials.username,
+      password: credentials.password,
     });
-
-    try {
-      console.debug("[MatrixService] Logging in...");
-      // Per deprecation warning, use loginRequest for password login
-      // to avoid side effects on the client instance
-      const loginResult = await tempClient.loginRequest({
-        type: "m.login.password",
-        user: username,
-        password: password,
-      });
-
-      console.debug(
-        "[MatrixService] Login successful, initializing full client"
-      );
-
-      // Initialize full client with access token
-      this.client = createClient({
-        baseUrl: this.homeserverUrl,
-        accessToken: loginResult.access_token,
-        userId: loginResult.user_id,
-        deviceId: loginResult.device_id,
-      });
-
-      this.setupEventListeners();
-
-      // Auto-start sync
-      await this.start();
-
-      this.authIsLoaded$.next(true);
-
-      return {
-        userId: loginResult.user_id,
-        accessToken: loginResult.access_token,
-        deviceId: loginResult.device_id,
-      };
-    } catch (error) {
-      console.error("[MatrixService] Login failed:", error);
-      throw error;
-    }
+    return await this.start(loginResponse);
   }
 
-  /**
-   * Login with existing access token (Restoring session)
-   */
-  public async loginWithToken(
-    userId: string,
-    accessToken: string,
-    deviceId: string
-  ): Promise<void> {
-    console.debug("[MatrixService] Restoring session with token...");
-
-    this.client = createClient({
-      baseUrl: this.homeserverUrl,
-      accessToken: accessToken,
-      userId: userId,
-      deviceId: deviceId,
+  public async loginWithToken(credentials: MatrixSession) {
+    return await this.start({
+      access_token: credentials.accessToken,
+      device_id: credentials.deviceId,
+      user_id: credentials.userId,
     });
-
-    this.setupEventListeners();
-
-    // Auto-start sync
-    await this.start();
-
-    this.authIsLoaded$.next(true);
-    console.debug("[MatrixService] Session restored");
   }
 
   /**
@@ -161,10 +97,8 @@ export class MatrixService {
 
     console.debug(`[MatrixService] Joining room: ${roomIdOrAlias}`);
     const room = await this.client.joinRoom(roomIdOrAlias);
-    console.debug(`[MatrixService] Joined room: ${room.roomId}`);
-
     const roomState = room.getLiveTimeline().getState(EventTimeline.FORWARDS);
-    const topicEvent = roomState?.getStateEvents("m.room.topic", "");
+    const topicEvent = roomState?.getStateEvents(EventType.RoomTopic, "");
     const topic = topicEvent?.getContent()?.topic;
 
     return {
@@ -228,7 +162,7 @@ export class MatrixService {
 
     return chatRooms.map((room) => {
       const roomState = room.getLiveTimeline().getState(EventTimeline.FORWARDS);
-      const topicEvent = roomState?.getStateEvents("m.room.topic", "");
+      const topicEvent = roomState?.getStateEvents(EventType.RoomTopic, "");
       const topic = topicEvent?.getContent()?.topic;
       return {
         roomId: room.roomId,
@@ -236,20 +170,6 @@ export class MatrixService {
         topic: topic,
       };
     });
-  }
-
-  /**
-   * Get room messages (history)
-   */
-  public async getRoomMessages(roomId: string): Promise<MatrixEvent[]> {
-    if (!this.client) return [];
-
-    const room = this.client.getRoom(roomId);
-    if (!room) return [];
-
-    // Get events from memory (timeline)
-    // This gets the most recent events
-    return room.getLiveTimeline().getEvents();
   }
 
   /**
@@ -273,90 +193,59 @@ export class MatrixService {
   // PRIVATE METHODS
   // =================================================================================================
 
-  /**
-   * Start the sync loop
-   */
-  private async start(): Promise<void> {
-    if (!this.client)
-      throw new Error("Client not initialized. Call login() first.");
+  private async start(loginResponse: LoginResponse): Promise<MatrixSession> {
+    console.debug("[MatrixService] Starting client...");
+    this.client = createClient({
+      baseUrl: this.homeserverUrl,
+      accessToken: loginResponse.access_token,
+      deviceId: loginResponse.device_id,
+      userId: loginResponse.user_id,
+    });
+    this.setupEventListeners();
+    await this.client.startClient({ initialSyncLimit: 10 });
 
-    console.debug("[MatrixService] Starting sync...");
-    await this.client.startClient({ initialSyncLimit: undefined });
+    const session: MatrixSession = {
+      userId: this.client.getUserId()!,
+      accessToken: this.client.getAccessToken()!,
+      deviceId: this.client.getDeviceId()!,
+    };
+    return session;
   }
 
-  /**
-   * Stop the sync loop
-   */
-  private stop(): void {
-    if (this.client) {
-      console.debug("[MatrixService] Stopping client...");
-      this.client.stopClient();
-    }
-  }
-
-  /**
-   * Internal event setup
-   */
-  private setupEventListeners() {
+  private setupEventListeners(): void {
     if (!this.client) return;
 
-    // Sync state changes
-    this.client.on(
-      ClientEvent.Sync,
-      (state: SyncState, prevState: SyncState | null, data?: SyncStateData) => {
-        if (state !== prevState) {
-          console.debug(`[MatrixService] Sync state: ${state}`);
-        }
-        // The syncState$ subject should emit the data payload from the sync,
-        // which is in the `data` parameter, not the `state` enum.
-        this.syncState$.next(state);
-      }
-    );
+    // Initialize the sync handler now that we have a client
+    this.syncEventHandler = new SyncEventHandler(this.client, this.onTimeline);
+    this.syncEventHandler.isReady$.subscribe(this._isClientReady$);
 
-    // Room timeline events (messages)
-    this.client.on(
-      RoomEvent.Timeline,
-      (
-        event: MatrixEvent,
-        room: Room | undefined,
-        toStartOfTimeline: boolean | undefined
-      ) => {
-        if (!room || toStartOfTimeline) return;
-
-        if (event.getType() === EventType.RoomMessage) {
-          console.debug(
-            `[MatrixService] New message in ${room.name}:`,
-            event.getContent().body
-          );
-          this.roomMessage$.next({ event, room });
-        }
-      }
-    );
-
-    // Room membership changes
-    this.client.on(
-      RoomMemberEvent.Membership,
-      (event: MatrixEvent, member: RoomMember) => {
-        console.debug(
-          `[MatrixService] Member update: ${member.name} (${member.membership})`
-        );
-        this.roomMember$.next({ event, member });
-      }
-    );
+    // Attach the single, authoritative sync listener
+    this.client.on(ClientEvent.Sync, this.syncEventHandler.onSync);
   }
+
+  private onTimeline = (
+    event: MatrixEvent,
+    room: Room | undefined,
+    toStartOfTimeline: boolean | undefined
+  ) => {
+    if (!room || toStartOfTimeline) return;
+    for (const handler of this.timelineHandlers) {
+      handler.handle(event);
+    }
+  };
 
   /**
    * Waits for the client to be in a state where it can perform actions.
    */
   private async waitForClient(): Promise<void> {
-    const currentState = this.syncState$.getValue();
-    if (currentState === "PREPARED" || currentState === "SYNCING") {
+    // The public stream already holds the state, so we can use it directly.
+    if (this._isClientReady$.getValue()) {
       return;
     }
 
     await firstValueFrom(
-      this.syncState$.pipe(
-        filter((state) => state === "PREPARED" || state === "SYNCING"),
+      this.isClientReady$.pipe(
+        filter((isReady) => isReady),
         take(1)
       )
     );

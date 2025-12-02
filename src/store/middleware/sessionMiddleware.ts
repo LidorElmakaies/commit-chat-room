@@ -1,27 +1,43 @@
-import { Middleware, isAction } from "@reduxjs/toolkit";
-import { AppDispatch, RootState } from "..";
+import { Middleware, Action } from "@reduxjs/toolkit";
+import { RootState } from "..";
 import { restoreSession } from "../slices/matrixAuthSlice";
+import { AppDispatch } from "../types";
+
+// Define the specific shape of the REHYDRATE action
+interface RehydrateAction extends Action {
+  type: "persist/REHYDRATE";
+  payload?: RootState;
+  err?: any;
+}
 
 export const sessionMiddleware: Middleware<{}, RootState> =
   (store) => (next) => (action) => {
-    const dispatch = store.dispatch as AppDispatch;
-    // First, let the action pass through the middleware chain
-    const result = next(action);
+    const rehydrateAction = action as RehydrateAction;
 
-    // After the action has been processed, check if it's the REHYDRATE action
-    if (isAction(action) && action.type === "persist/REHYDRATE") {
-      const state = store.getState();
-      const { isAuthenticated, userId, accessToken, deviceId } =
-        state.matrixAuth;
+    if (rehydrateAction.type === "persist/REHYDRATE") {
+      const session = rehydrateAction.payload?.matrixAuth;
 
-      // If we have a persisted session, try to restore it in the MatrixService
-      if (isAuthenticated && userId && accessToken && deviceId) {
-        console.log(
-          "Session middleware: Rehydrated and authenticated. Restoring session..."
+      console.log("[Session] Persisted auth state:", session);
+
+      if (
+        session?.isAuthenticated &&
+        session.userId &&
+        session.accessToken &&
+        session.deviceId
+      ) {
+        (store.dispatch as AppDispatch)(
+          restoreSession({
+            userId: session.userId,
+            accessToken: session.accessToken,
+            deviceId: session.deviceId,
+          })
         );
-        dispatch(restoreSession({ userId, accessToken, deviceId }));
+      } else {
+        console.log(
+          "[Session] No valid, authenticated session found in storage. Skipping auto-login."
+        );
       }
     }
 
-    return result;
+    return next(action);
   };

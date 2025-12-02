@@ -1,6 +1,6 @@
 import React from "react";
 import { useTheme } from "@react-navigation/native";
-import { ThemedText } from "..";
+import ThemedText from "./ThemedText";
 import { themedErrorMessageStyles } from "../../constants/ComponentStyles";
 
 interface ThemedErrorMessageProps {

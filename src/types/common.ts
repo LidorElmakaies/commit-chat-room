@@ -1,4 +1,4 @@
-export enum LoadingState {
+export enum FetchState {
   Idle = "idle",
   Pending = "pending",
   Succeeded = "succeeded",

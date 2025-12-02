@@ -1,14 +1,23 @@
+import { useEffect } from "react";
 import { useLocalSearchParams } from "expo-router";
-import { ThemedView, ThemedText } from "../../../components";
+import { ThemedView } from "../../../components";
 import { commonStyles } from "../../../constants/Styles";
+import { useAppDispatch } from "../../../src/store/types";
+import { selectRoom, deselectRoom } from "../../../src/store/slices/roomSlice";
 
 export default function RoomIndex() {
-  const { roomId } = useLocalSearchParams();
+  const { roomId } = useLocalSearchParams<{ roomId: string }>();
+  const dispatch = useAppDispatch();
 
-  return (
-    <ThemedView style={commonStyles.center}>
-      <ThemedText>Chat for Room ID:</ThemedText>
-      <ThemedText>{roomId}</ThemedText>
-    </ThemedView>
-  );
+  useEffect(() => {
+    if (roomId) {
+      dispatch(selectRoom(roomId));
+
+      return () => {
+        dispatch(deselectRoom());
+      };
+    }
+  }, [roomId, dispatch]);
+
+  return <ThemedView style={commonStyles.container}></ThemedView>;
 }

@@ -1,7 +1,7 @@
 import { Redirect, Tabs, useRouter } from "expo-router";
 import React from "react";
-import { useAppDispatch, useAppSelector } from "../../src/store";
-import { logoutUser } from "../../src/store/slices/matrixAuthSlice";
+import { useAppDispatch, useAppSelector } from "../../src/store/types";
+import { logout } from "../../src/store/slices/matrixAuthSlice";
 import { View } from "react-native";
 import { HomeButton, LogoutButton } from "../../components";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -16,11 +16,10 @@ export default function AppLayout() {
   }
 
   const handleLogout = () => {
-    dispatch(logoutUser());
+    dispatch(logout());
   };
 
   const handleHome = () => {
-    // Navigate to the default tab
     router.push("/(app)");
   };
 

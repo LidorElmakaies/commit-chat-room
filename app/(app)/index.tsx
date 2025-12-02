@@ -1,6 +1,6 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { useRouter, useFocusEffect } from "expo-router";
+import { useRouter } from "expo-router";
 import {
   ThemedView,
   ThemedTextInput,
@@ -9,26 +9,16 @@ import {
   ThemedErrorMessage,
   ThemedCard,
 } from "../../components";
-import {
-  fetchJoinedRooms,
-  joinRoom,
-  selectRoom,
-} from "../../src/store/slices/roomSlice";
-import { useAppDispatch, useAppSelector } from "../../src/store";
-import { LoadingState } from "../../src/types";
+import { joinRoom } from "../../src/store/slices/roomSlice";
+import { FetchState } from "../../src/types";
 import { commonStyles } from "../../constants/Styles";
+import { useAppSelector, useAppDispatch } from "../../src/store/types";
 
 const JoinRoomScreen = () => {
   const [roomId, setRoomId] = useState("");
-  const { joinedRooms, loading, error } = useAppSelector((state) => state.room);
+  const { rooms, loading, error } = useAppSelector((state) => state.room);
   const dispatch = useAppDispatch();
   const router = useRouter();
-
-  useFocusEffect(
-    useCallback(() => {
-      dispatch(fetchJoinedRooms());
-    }, [dispatch])
-  );
 
   const handleJoinRoom = async () => {
     if (roomId.trim()) {
@@ -41,7 +31,6 @@ const JoinRoomScreen = () => {
   };
 
   const handleSelectRoom = (selectedRoomId: string) => {
-    dispatch(selectRoom(selectedRoomId));
     router.replace(`/room/${selectedRoomId}`);
   };
 
@@ -58,17 +47,17 @@ const JoinRoomScreen = () => {
           <ThemedButton
             title="Join"
             onPress={handleJoinRoom}
-            loading={loading === LoadingState.Pending}
+            loading={loading === FetchState.Pending}
           />
         </View>
         <View style={styles.listContainer}>
-          {loading === LoadingState.Pending && <ActivityIndicator />}
-          {loading !== LoadingState.Pending && (
+          {loading === FetchState.Pending && <ActivityIndicator />}
+          {loading !== FetchState.Pending && (
             <ThemedErrorMessage message={error ?? undefined} />
           )}
-          {loading !== LoadingState.Pending && !error && (
+          {loading !== FetchState.Pending && !error && (
             <ThemedList
-              data={Object.values(joinedRooms).map((room) => ({
+              data={Object.values(rooms).map((room) => ({
                 label: room.name,
                 onItemPress: () => handleSelectRoom(room.roomId),
               }))}

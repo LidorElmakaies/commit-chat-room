@@ -2,8 +2,8 @@ import { Tabs, useRouter } from "expo-router";
 import { View } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useAppDispatch } from "../../../src/store";
-import { logoutUser } from "../../../src/store/slices/matrixAuthSlice";
+import { useAppDispatch } from "../../../src/store/types";
+import { logout } from "../../../src/store/slices/matrixAuthSlice";
 import { HomeButton, LogoutButton } from "../../../components";
 
 export default function RoomTabLayout() {
@@ -11,7 +11,7 @@ export default function RoomTabLayout() {
   const dispatch = useAppDispatch();
 
   const handleLogout = () => {
-    dispatch(logoutUser());
+    dispatch(logout());
   };
 
   const handleHome = () => {

@@ -10,14 +10,18 @@ import {
   ThemedText,
 } from "../../components";
 import { commonStyles } from "../../constants/Styles";
-import Typography from "../../constants/Typography";
-import { useAppDispatch, useAppSelector } from "../../src/store";
-import { clearError, loginUser } from "../../src/store/slices/matrixAuthSlice";
-import { LoadingState } from "@/src/types";
+import { Typography } from "../../constants/Typography";
+import { useAppDispatch, useAppSelector } from "../../src/store/types";
+import { clearError, login } from "../../src/store/slices/matrixAuthSlice";
+import { LoginState } from "@/src/types";
+import { useRouter } from "expo-router";
 
 export default function LoginScreen() {
   const dispatch = useAppDispatch();
-  const { loading, error } = useAppSelector((state) => state.matrixAuth);
+  const { loading, error, isAuthenticated } = useAppSelector(
+    (state) => state.matrixAuth
+  );
+  const router = useRouter();
 
   const { control, handleSubmit } = useForm({
     defaultValues: {
@@ -26,7 +30,12 @@ export default function LoginScreen() {
     },
   });
 
-  // Show error alert
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace("/(app)");
+    }
+  }, [isAuthenticated, router]);
+
   useEffect(() => {
     if (error) {
       Alert.alert("Login Failed", error, [
@@ -36,7 +45,7 @@ export default function LoginScreen() {
   }, [dispatch, error]);
 
   const onSubmit = (data: any) => {
-    dispatch(loginUser({ username: data.username, password: data.password }));
+    dispatch(login({ username: data.username, password: data.password }));
   };
 
   return (
@@ -62,7 +71,7 @@ export default function LoginScreen() {
         <ThemedButton
           title="Sign In"
           onPress={handleSubmit(onSubmit)}
-          loading={loading === LoadingState.Pending}
+          loading={loading === LoginState.Pending}
           style={styles.button}
         />
       </ThemedCard>
