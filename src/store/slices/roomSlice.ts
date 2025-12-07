@@ -61,6 +61,21 @@ export const createRoom = createAsyncThunk(
   }
 );
 
+export const sendMessage = createAsyncThunk(
+  "room/sendMessage",
+  async ({ roomId, body }: { roomId: string; body: string }, { rejectWithValue }) => {
+    try {
+      console.log("[RoomSlice] Sending message to room", roomId, body);
+      await matrixService.sendMessage(roomId, body);
+      console.log("[RoomSlice] Message sent successfully");
+      return { roomId, body };
+    } catch (error: any) {
+      console.error("[RoomSlice] Failed to send message", error);
+      return rejectWithValue(error.message || "Failed to send message");
+    }
+  }
+);
+
 const roomSlice = createSlice({
   name: "room",
   initialState,
@@ -123,6 +138,20 @@ const roomSlice = createSlice({
       .addCase(fetchJoinedRooms.rejected, (state, action) => {
         state.loading = FetchState.Failed;
         state.error = action.payload as string;
+      })
+      .addCase(sendMessage.pending, (state) => {
+        // Message sending doesn't set loading state to avoid blocking UI
+        // Error will be handled if rejected
+      })
+      .addCase(sendMessage.fulfilled, (state) => {
+        // Message sent successfully
+        // The message will appear in currentRoomMessages via messageReceived
+        // when Matrix syncs it back through the event stream
+        console.log("[RoomSlice] Message send fulfilled");
+      })
+      .addCase(sendMessage.rejected, (state, action) => {
+        state.error = action.payload as string;
+        console.error("[RoomSlice] Message send rejected", action.payload);
       });
   },
 });
