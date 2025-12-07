@@ -12,7 +12,7 @@ import {
 import { joinRoom } from "../../src/store/slices/roomSlice";
 import { FetchState } from "../../src/types";
 import { commonStyles } from "../../constants/Styles";
-import { useAppSelector, useAppDispatch } from "../../src/store/types";
+import { useAppSelector, useAppDispatch } from "../../src/store";
 
 const JoinRoomScreen = () => {
   const [roomId, setRoomId] = useState("");

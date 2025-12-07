@@ -1,20 +1,20 @@
+import { LoginState } from "@/src/types";
+import { useRouter } from "expo-router";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Alert, StyleSheet } from "react-native";
 import {
   ThemedButton,
-  ThemedPasswordInput,
-  ThemedUsernameInput,
   ThemedCard,
-  ThemedView,
+  ThemedPasswordInput,
   ThemedText,
+  ThemedUsernameInput,
+  ThemedView,
 } from "../../components";
 import { commonStyles } from "../../constants/Styles";
 import { Typography } from "../../constants/Typography";
-import { useAppDispatch, useAppSelector } from "../../src/store/types";
+import { useAppDispatch, useAppSelector } from "../../src/store";
 import { clearError, login } from "../../src/store/slices/matrixAuthSlice";
-import { LoginState } from "@/src/types";
-import { useRouter } from "expo-router";
 
 export default function LoginScreen() {
   const dispatch = useAppDispatch();

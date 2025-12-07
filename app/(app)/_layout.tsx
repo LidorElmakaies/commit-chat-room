@@ -1,6 +1,6 @@
 import { Redirect, Tabs, useRouter } from "expo-router";
 import React from "react";
-import { useAppDispatch, useAppSelector } from "../../src/store/types";
+import { useAppDispatch, useAppSelector } from "../../src/store";
 import { logout } from "../../src/store/slices/matrixAuthSlice";
 import { View } from "react-native";
 import { HomeButton, LogoutButton } from "../../components";

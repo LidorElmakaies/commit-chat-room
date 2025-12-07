@@ -12,7 +12,7 @@ import {
 } from "../../components";
 import { commonStyles } from "../../constants/Styles";
 import { useForm, Controller } from "react-hook-form";
-import { useAppDispatch, useAppSelector } from "../../src/store/types";
+import { useAppDispatch, useAppSelector } from "../../src/store";
 import { createRoom } from "../../src/store/slices/roomSlice";
 import { CreateRoomOptions, RoomVisibility, FetchState } from "../../src/types";
 
