@@ -1,28 +1,30 @@
 import {
-  MatrixClient,
-  createClient,
-  MatrixEvent,
-  Room,
   ClientEvent,
-  Preset,
-  Visibility,
+  createClient,
   EventTimeline,
   EventType,
-  MsgType,
   LoginResponse,
+  MatrixClient,
+  MatrixEvent,
+  MsgType,
+  Preset,
+  Room,
+  Visibility,
 } from "matrix-js-sdk";
-import { BehaviorSubject, firstValueFrom } from "rxjs";
+import { BehaviorSubject, firstValueFrom, Observable } from "rxjs";
 import { filter, take } from "rxjs/operators";
 import {
+  CreateRoomOptions,
   LoginCredentials,
   MatrixSession,
   RoomSummary,
-  CreateRoomOptions,
   RoomVisibility,
+  UserMediaStream,
 } from "../../types";
+import { CallManager } from "./CallManager";
+import { IEventHandler } from "./handlers/IEventHandler";
 import { RoomMessageHandler } from "./handlers/roomMessageHandler";
 import { SyncEventHandler } from "./handlers/syncEventHandler";
-import { IEventHandler } from "./handlers/IEventHandler";
 /**
  * Matrix Service
  *
@@ -41,6 +43,10 @@ class MatrixService {
   public readonly roomMessages$;
   private readonly _isClientReady$ = new BehaviorSubject<boolean>(false);
   public readonly isClientReady$ = this._isClientReady$.asObservable();
+
+  // Call manager - handles all group call functionality
+  private callManager: CallManager | null = null;
+
   constructor(homeserverUrl: string = "https://matrix.org") {
     this.homeserverUrl = homeserverUrl;
     let messageHandler = new RoomMessageHandler();
@@ -59,6 +65,12 @@ class MatrixService {
       this.client.stopClient();
       await this.client.logout();
       this.client = null;
+    }
+
+    // Clean up call manager
+    if (this.callManager) {
+      this.callManager.cleanup();
+      this.callManager = null;
     }
 
     // Reset state
@@ -189,6 +201,69 @@ class MatrixService {
     await this.client.scrollback(room, limit);
   }
 
+  /**
+   * Join or create a video call in a room
+   * Uses MatrixRTC (Group Calls) for room-based video calls
+   * If already in a call in another room, leaves that call first
+   */
+  public async joinCall(
+    roomId: string,
+    video: boolean = true,
+    audioMuted: boolean = true,
+    videoMuted: boolean = true
+  ): Promise<{ callId: string; roomId: string }> {
+    await this.waitForClient();
+    if (!this.client || !this.callManager) {
+      throw new Error("Client not initialized");
+    }
+    return await this.callManager.joinCall(roomId, video, audioMuted, videoMuted);
+  }
+
+  /**
+   * Leave/end the current active call
+   */
+  public async leaveCall(): Promise<void> {
+    if (!this.client || !this.callManager) {
+      throw new Error("Client not initialized");
+    }
+    return await this.callManager.leaveCall();
+  }
+
+  /**
+   * Get observable stream of user media streams for the current active call room
+   * Returns a single observable that always emits streams for the currently active call
+   * Emits empty array when no call is active
+   */
+  public getCallStreams$(): Observable<UserMediaStream[]> {
+    if (!this.callManager) {
+      throw new Error("Client not initialized");
+    }
+    return this.callManager.getCallStreams$();
+  }
+
+  /**
+   * Toggle microphone mute state
+   * @param muted - true to mute, false to unmute
+   * @returns Promise<boolean> - true if successful
+   */
+  public async setMicrophoneMuted(muted: boolean): Promise<boolean> {
+    if (!this.callManager) {
+      throw new Error("Client not initialized");
+    }
+    return await this.callManager.setMicrophoneMuted(muted);
+  }
+
+  /**
+   * Toggle video mute state
+   * @param muted - true to mute, false to unmute
+   * @returns Promise<boolean> - true if successful
+   */
+  public async setVideoMuted(muted: boolean): Promise<boolean> {
+    if (!this.callManager) {
+      throw new Error("Client not initialized");
+    }
+    return await this.callManager.setVideoMuted(muted);
+  }
   // =================================================================================================
   // PRIVATE METHODS
   // =================================================================================================
@@ -203,6 +278,9 @@ class MatrixService {
     });
     this.setupEventListeners();
     await this.client.startClient({ initialSyncLimit: 10 });
+
+    // Initialize call manager with the client
+    this.callManager = new CallManager(this.client);
 
     const session: MatrixSession = {
       userId: this.client.getUserId()!,

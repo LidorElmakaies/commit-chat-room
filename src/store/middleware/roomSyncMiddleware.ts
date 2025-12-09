@@ -1,7 +1,7 @@
 import { Middleware } from "@reduxjs/toolkit";
+import { AppDispatch } from "..";
 import { login, restoreSession } from "../slices/matrixAuthSlice";
 import { fetchJoinedRooms } from "../slices/roomSlice";
-import { AppDispatch } from "../types";
 
 export const roomSyncMiddleware: Middleware = (store) => (next) => (action) => {
   const result = next(action);

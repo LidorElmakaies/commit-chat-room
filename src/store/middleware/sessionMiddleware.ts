@@ -1,7 +1,6 @@
-import { Middleware, Action } from "@reduxjs/toolkit";
-import { RootState } from "..";
+import { Action, Middleware } from "@reduxjs/toolkit";
+import { AppDispatch, RootState } from "..";
 import { restoreSession } from "../slices/matrixAuthSlice";
-import { AppDispatch } from "../types";
 
 // Define the specific shape of the REHYDRATE action
 interface RehydrateAction extends Action {

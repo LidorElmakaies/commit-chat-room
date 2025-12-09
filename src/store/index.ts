@@ -13,10 +13,12 @@ import {
 } from "redux-persist";
 import createTransform from "redux-persist/es/createTransform";
 
+import callReducer from "./slices/callSlice";
 import matrixAuthReducer, { MatrixAuthState } from "./slices/matrixAuthSlice";
 import roomReducer from "./slices/roomSlice";
 
 import {
+  callStreamMiddleware,
   messageListenerMiddleware,
   roomSyncMiddleware,
   sessionMiddleware,
@@ -44,6 +46,7 @@ const authStateTransform = createTransform(
 const rootReducer = combineReducers({
   matrixAuth: matrixAuthReducer,
   room: roomReducer,
+  call: callReducer,
 });
 export type RootState = ReturnType<typeof rootReducer>;
 
@@ -63,7 +66,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }).concat(sessionMiddleware, messageListenerMiddleware, roomSyncMiddleware),
+    }).concat(sessionMiddleware, messageListenerMiddleware, roomSyncMiddleware, callStreamMiddleware),
 });
 
 export const persistor = persistStore(store);

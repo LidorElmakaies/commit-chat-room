@@ -3,8 +3,8 @@ import { matrixService } from "../../services/matrix/MatrixService";
 import {
   CreateRoomOptions,
   FetchState,
-  RoomSummary,
   Message,
+  RoomSummary,
 } from "../../types";
 
 export interface RoomState {
@@ -156,6 +156,5 @@ const roomSlice = createSlice({
   },
 });
 
-export const { clearRoomError, selectRoom, deselectRoom, messageReceived } =
-  roomSlice.actions;
+export const { clearRoomError, selectRoom, deselectRoom, messageReceived } = roomSlice.actions;
 export default roomSlice.reducer;

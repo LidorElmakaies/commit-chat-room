@@ -1,9 +1,8 @@
 import { Middleware } from "@reduxjs/toolkit";
 import { Subscription } from "rxjs";
+import { AppDispatch, RootState } from "..";
 import { matrixService } from "../../services/matrix/MatrixService";
-import { RootState } from "..";
 import { messageReceived } from "../slices/roomSlice";
-import { AppDispatch } from "../types";
 
 let messageSubscription: Subscription | null = null;
 
