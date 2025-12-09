@@ -13,8 +13,8 @@ import {
 } from "../../components";
 import { commonStyles } from "../../constants/Styles";
 import { Typography } from "../../constants/Typography";
-import { useAppDispatch, useAppSelector } from "../../src/store";
-import { clearError, login } from "../../src/store/slices/matrixAuthSlice";
+import { useAppDispatch, useAppSelector } from "../../store";
+import { clearError, login } from "../../store/slices/matrixAuthSlice";
 
 export default function LoginScreen() {
   const dispatch = useAppDispatch();

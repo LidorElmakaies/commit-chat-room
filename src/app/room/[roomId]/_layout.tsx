@@ -1,10 +1,10 @@
-import { Tabs, useRouter } from "expo-router";
-import { View } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useAppDispatch } from "../../../src/store";
-import { logout } from "../../../src/store/slices/matrixAuthSlice";
+import { Tabs, useRouter } from "expo-router";
+import { View } from "react-native";
 import { HomeButton, LogoutButton } from "../../../components";
+import { useAppDispatch } from "../../../store";
+import { logout } from "../../../store/slices/matrixAuthSlice";
 
 export default function RoomTabLayout() {
   const router = useRouter();

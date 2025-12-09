@@ -1,10 +1,10 @@
+import { MaterialIcons } from "@expo/vector-icons";
 import { Redirect, Tabs, useRouter } from "expo-router";
 import React from "react";
-import { useAppDispatch, useAppSelector } from "../../src/store";
-import { logout } from "../../src/store/slices/matrixAuthSlice";
 import { View } from "react-native";
 import { HomeButton, LogoutButton } from "../../components";
-import { MaterialIcons } from "@expo/vector-icons";
+import { useAppDispatch, useAppSelector } from "../../store";
+import { logout } from "../../store/slices/matrixAuthSlice";
 
 export default function AppLayout() {
   const router = useRouter();

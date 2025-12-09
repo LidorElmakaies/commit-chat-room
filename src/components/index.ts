@@ -5,5 +5,3 @@ export { default as ThemedCard } from "./ThemedCard";
 export { default as ThemedDropdown } from "./ThemedDropdown";
 export { default as ThemedList } from "./ThemedList";
 export { default as ThemedView } from "./ThemedView";
-export { default as MediaStreamView } from "./MediaStreamView";
-

@@ -9,8 +9,8 @@ import { useColorScheme } from "react-native";
 import "react-native-reanimated";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
-import "../polyfills";
-import { persistor, store } from "../src/store";
+import "../../polyfills";
+import { persistor, store } from "../store";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();

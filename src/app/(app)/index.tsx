@@ -1,18 +1,18 @@
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { useRouter } from "expo-router";
 import {
-  ThemedView,
-  ThemedTextInput,
   ThemedButton,
-  ThemedList,
-  ThemedErrorMessage,
   ThemedCard,
+  ThemedErrorMessage,
+  ThemedList,
+  ThemedTextInput,
+  ThemedView,
 } from "../../components";
-import { joinRoom } from "../../src/store/slices/roomSlice";
-import { FetchState } from "../../src/types";
 import { commonStyles } from "../../constants/Styles";
-import { useAppSelector, useAppDispatch } from "../../src/store";
+import { useAppDispatch, useAppSelector } from "../../store";
+import { joinRoom } from "../../store/slices/roomSlice";
+import { FetchState } from "../../types";
 
 const JoinRoomScreen = () => {
   const [roomId, setRoomId] = useState("");

@@ -1,12 +1,21 @@
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { FlatList, StyleSheet, useColorScheme, View } from "react-native";
-import { ThemedButton, ThemedText, ThemedTextInput, ThemedView } from "../../../components";
+import {
+  ThemedButton,
+  ThemedText,
+  ThemedTextInput,
+  ThemedView,
+} from "../../../components";
 import { Colors } from "../../../constants/Colors";
 import { commonStyles } from "../../../constants/Styles";
-import { useAppDispatch, useAppSelector } from "../../../src/store";
-import { deselectRoom, selectRoom, sendMessage } from "../../../src/store/slices/roomSlice";
-import { Message, MessageType } from "../../../src/types";
+import { useAppDispatch, useAppSelector } from "../../../store";
+import {
+  deselectRoom,
+  selectRoom,
+  sendMessage,
+} from "../../../store/slices/roomSlice";
+import { Message, MessageType } from "../../../types";
 
 export default function RoomIndex() {
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
@@ -14,7 +23,9 @@ export default function RoomIndex() {
   const [messageText, setMessageText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const flatListRef = useRef<FlatList>(null);
-  const { currentSelectedRoomId, currentRoomMessages } = useAppSelector((state) => state.room);
+  const { currentSelectedRoomId, currentRoomMessages } = useAppSelector(
+    (state) => state.room
+  );
   const { userId } = useAppSelector((state) => state.matrixAuth);
   const colorScheme = useColorScheme() ?? "light";
   const theme = Colors[colorScheme] ?? Colors.light;
@@ -48,18 +59,25 @@ export default function RoomIndex() {
     const date = new Date(timestamp);
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const messageDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
 
     if (messageDate.getTime() === today.getTime()) {
       // Same day: show time only
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     } else {
       // Different day: show date and time
-      return date.toLocaleString([], { 
-        month: 'short', 
-        day: 'numeric', 
-        hour: '2-digit', 
-        minute: '2-digit' 
+      return date.toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     }
   };
@@ -68,11 +86,13 @@ export default function RoomIndex() {
     const isOwnMessage = item.sender === userId;
     const senderName = formatSenderName(item.sender);
     const timestamp = formatTimestamp(item.timestamp);
-    
+
     // Only render text messages for now
-    if (item.content.type !== MessageType.Text && 
-        item.content.type !== MessageType.Notice && 
-        item.content.type !== MessageType.Emote) {
+    if (
+      item.content.type !== MessageType.Text &&
+      item.content.type !== MessageType.Notice &&
+      item.content.type !== MessageType.Emote
+    ) {
       return null;
     }
 
@@ -80,7 +100,9 @@ export default function RoomIndex() {
       <View
         style={[
           styles.messageContainer,
-          isOwnMessage ? styles.ownMessageContainer : styles.otherMessageContainer,
+          isOwnMessage
+            ? styles.ownMessageContainer
+            : styles.otherMessageContainer,
         ]}
       >
         {!isOwnMessage && (
@@ -93,7 +115,10 @@ export default function RoomIndex() {
             styles.messageBubble,
             isOwnMessage
               ? { backgroundColor: theme.primary, alignSelf: "flex-end" }
-              : { backgroundColor: theme.uiBackground, alignSelf: "flex-start" },
+              : {
+                  backgroundColor: theme.uiBackground,
+                  alignSelf: "flex-start",
+                },
           ]}
         >
           <ThemedText
@@ -121,7 +146,9 @@ export default function RoomIndex() {
     console.log("[RoomIndex] Sending message:", trimmedMessage);
     setIsSending(true);
     try {
-      await dispatch(sendMessage({ roomId: currentSelectedRoomId, body: trimmedMessage })).unwrap();
+      await dispatch(
+        sendMessage({ roomId: currentSelectedRoomId, body: trimmedMessage })
+      ).unwrap();
       setMessageText(""); // Clear input after successful send
     } catch (error) {
       console.error("[RoomIndex] Failed to send message:", error);
@@ -145,7 +172,9 @@ export default function RoomIndex() {
           flatListRef.current?.scrollToEnd({ animated: true });
         }}
       />
-      <View style={[styles.messageInputContainer, { borderTopColor: theme.border }]}>
+      <View
+        style={[styles.messageInputContainer, { borderTopColor: theme.border }]}
+      >
         <ThemedTextInput
           value={messageText}
           onChangeText={setMessageText}

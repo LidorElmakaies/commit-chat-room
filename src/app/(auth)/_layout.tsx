@@ -1,7 +1,7 @@
-import { Tabs, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useAppSelector } from "../../src/store";
+import { Tabs, useRouter } from "expo-router";
 import { useEffect } from "react";
+import { useAppSelector } from "../../store";
 
 export default function AuthLayout() {
   const { isAuthenticated } = useAppSelector((state) => state.matrixAuth);

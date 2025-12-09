@@ -1,20 +1,20 @@
-import React from "react";
-import { StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
+import React from "react";
+import { Controller, useForm } from "react-hook-form";
+import { StyleSheet, View } from "react-native";
 import {
-  ThemedView,
-  ThemedTextInput,
   ThemedButton,
-  ThemedText,
   ThemedCard,
   ThemedDropdown,
   ThemedErrorMessage,
+  ThemedText,
+  ThemedTextInput,
+  ThemedView,
 } from "../../components";
 import { commonStyles } from "../../constants/Styles";
-import { useForm, Controller } from "react-hook-form";
-import { useAppDispatch, useAppSelector } from "../../src/store";
-import { createRoom } from "../../src/store/slices/roomSlice";
-import { CreateRoomOptions, RoomVisibility, FetchState } from "../../src/types";
+import { useAppDispatch, useAppSelector } from "../../store";
+import { createRoom } from "../../store/slices/roomSlice";
+import { CreateRoomOptions, FetchState, RoomVisibility } from "../../types";
 
 const CreateRoomScreen = () => {
   const dispatch = useAppDispatch();
