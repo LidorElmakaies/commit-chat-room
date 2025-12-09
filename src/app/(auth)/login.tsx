@@ -13,14 +13,15 @@ import {
 } from "../../components";
 import { commonStyles } from "../../constants/Styles";
 import { Typography } from "../../constants/Typography";
+import { useAuthGuard } from "../../hooks/useAuthGuard";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { clearError, login } from "../../store/slices/matrixAuthSlice";
 
 export default function LoginScreen() {
+  useAuthGuard(); // Guard the route
+
   const dispatch = useAppDispatch();
-  const { loading, error, isAuthenticated } = useAppSelector(
-    (state) => state.matrixAuth
-  );
+  const { loading, error } = useAppSelector((state) => state.matrixAuth);
   const router = useRouter();
 
   const { control, handleSubmit } = useForm({
@@ -30,11 +31,12 @@ export default function LoginScreen() {
     },
   });
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.replace("/(app)");
-    }
-  }, [isAuthenticated, router]);
+  // This logic is now handled by the useAuthGuard hook
+  // useEffect(() => {
+  //   if (isAuthenticated) {
+  //     router.replace("/(app)");
+  //   }
+  // }, [isAuthenticated, router]);
 
   useEffect(() => {
     if (error) {

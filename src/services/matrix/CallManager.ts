@@ -1,15 +1,15 @@
 import {
-    GroupCallEvent,
-    GroupCallIntent,
-    GroupCallType,
-    MatrixClient,
+  GroupCallEvent,
+  GroupCallIntent,
+  GroupCallType,
+  MatrixClient,
 } from "matrix-js-sdk";
 import { Observable, Subject } from "rxjs";
 import { UserMediaStream } from "../../types";
 
 /**
  * CallManager
- * 
+ *
  * Handles all group call functionality for Matrix rooms.
  * Manages call lifecycle, stream observables, and mute states.
  */
@@ -36,7 +36,10 @@ export class CallManager {
     try {
       await this.client.waitUntilRoomReadyForGroupCalls(roomId);
     } catch (error: any) {
-      console.warn(`[CallManager] waitUntilRoomReadyForGroupCalls failed:`, error.message);
+      console.warn(
+        `[CallManager] waitUntilRoomReadyForGroupCalls failed:`,
+        error.message
+      );
       // Continue anyway - createGroupCall will handle the error if room isn't ready
     }
 
@@ -50,10 +53,16 @@ export class CallManager {
 
     const room = this.client.getRoom(roomId);
     if (!room) {
-      throw new Error(`Room ${roomId} not found. Make sure you've joined the room first.`);
+      throw new Error(
+        `Room ${roomId} not found. Make sure you've joined the room first.`
+      );
     }
 
-    console.log(`[CallManager] Joining ${video ? "video" : "audio"} call in room: ${roomId}`);
+    console.log(
+      `[CallManager] Joining ${
+        video ? "video" : "audio"
+      } call in room: ${roomId}`
+    );
 
     try {
       // Create new observable for this call (per-call lifecycle)
@@ -63,7 +72,9 @@ export class CallManager {
         this._currentCallStreams$ = null;
       }
       this._currentCallStreams$ = new Subject<UserMediaStream[]>();
-      console.log(`[CallManager] Created new stream observable for room ${roomId}`);
+      console.log(
+        `[CallManager] Created new stream observable for room ${roomId}`
+      );
 
       // Try to get or create a group call (MatrixRTC - modern standard for room calls)
       let groupCall: any = null;
@@ -72,17 +83,24 @@ export class CallManager {
       try {
         groupCall = this.client.getGroupCallForRoom(roomId);
         if (groupCall) {
-          console.log(`[CallManager] Found existing group call for room ${roomId}`);
+          console.log(
+            `[CallManager] Found existing group call for room ${roomId}`
+          );
         }
       } catch (error: any) {
         // getGroupCallForRoom might throw if group calls manager isn't ready
         // This can happen even after waitUntilRoomReadyForGroupCalls if there's a race condition
-        console.log(`[CallManager] Could not get existing group call:`, error.message);
+        console.log(
+          `[CallManager] Could not get existing group call:`,
+          error.message
+        );
       }
 
       // If no existing call, create a new one
       if (!groupCall) {
-        console.log(`[CallManager] Creating new group call for room: ${roomId}`);
+        console.log(
+          `[CallManager] Creating new group call for room: ${roomId}`
+        );
         // Parameters: roomId, type, isPtt (push-to-talk), intent, dataChannelsEnabled, dataChannelOptions
         groupCall = await this.client.createGroupCall(
           roomId,
@@ -100,7 +118,9 @@ export class CallManager {
           this._currentCallStreams$.complete();
           this._currentCallStreams$ = null;
         }
-        throw new Error("Failed to create or get group call. Group calls may not be supported.");
+        throw new Error(
+          "Failed to create or get group call. Group calls may not be supported."
+        );
       }
 
       // Join/enter the group call
@@ -110,7 +130,9 @@ export class CallManager {
       // Set mute states based on parameters
       await groupCall.setMicrophoneMuted(audioMuted);
       await groupCall.setLocalVideoMuted(videoMuted);
-      console.log(`[CallManager] Audio muted: ${audioMuted}, Video muted: ${videoMuted}`);
+      console.log(
+        `[CallManager] Audio muted: ${audioMuted}, Video muted: ${videoMuted}`
+      );
 
       // Set up stream observable for this room
       this.setupCallStreamObservable(roomId, groupCall);
@@ -165,7 +187,9 @@ export class CallManager {
    */
   public getCallStreams$(): Observable<UserMediaStream[]> {
     if (!this._currentCallStreams$) {
-      throw new Error("No active call. Join a call first to get the stream observable.");
+      throw new Error(
+        "No active call. Join a call first to get the stream observable."
+      );
     }
     return this._currentCallStreams$.asObservable();
   }
@@ -182,7 +206,9 @@ export class CallManager {
 
     try {
       const success = await this._currentGroupCall.setMicrophoneMuted(muted);
-      console.log(`[CallManager] Microphone ${muted ? "muted" : "unmuted"}: ${success}`);
+      console.log(
+        `[CallManager] Microphone ${muted ? "muted" : "unmuted"}: ${success}`
+      );
       return success;
     } catch (error: any) {
       console.error("[CallManager] Error setting microphone mute:", error);
@@ -202,7 +228,9 @@ export class CallManager {
 
     try {
       const success = await this._currentGroupCall.setLocalVideoMuted(muted);
-      console.log(`[CallManager] Video ${muted ? "muted" : "unmuted"}: ${success}`);
+      console.log(
+        `[CallManager] Video ${muted ? "muted" : "unmuted"}: ${success}`
+      );
       return success;
     } catch (error: any) {
       console.error("[CallManager] Error setting video mute:", error);
@@ -239,7 +267,9 @@ export class CallManager {
    */
   private setupCallStreamObservable(roomId: string, groupCall: any): void {
     if (!this._currentCallStreams$) {
-      console.error(`[CallManager] setupCallStreamObservable called but no observable exists for room ${roomId}`);
+      console.error(
+        `[CallManager] setupCallStreamObservable called but no observable exists for room ${roomId}`
+      );
       return;
     }
 
@@ -255,7 +285,9 @@ export class CallManager {
         userId: feed.userId,
         isLocal: feed.isLocal(),
       }));
-      console.log(`[CallManager] Emitting ${streams.length} streams for room ${roomId}`);
+      console.log(
+        `[CallManager] Emitting ${streams.length} streams for room ${roomId}`
+      );
       this._currentCallStreams$.next(streams);
     };
 
@@ -272,9 +304,14 @@ export class CallManager {
       // Properly leave the call
       try {
         groupCall.leave();
-        console.log(`[CallManager] Left call on state change for room ${roomId}`);
+        console.log(
+          `[CallManager] Left call on state change for room ${roomId}`
+        );
       } catch (error) {
-        console.warn(`[CallManager] Error leaving call on state change:`, error);
+        console.warn(
+          `[CallManager] Error leaving call on state change:`,
+          error
+        );
       }
 
       // Complete and clean up observable (per-call lifecycle)
@@ -282,7 +319,9 @@ export class CallManager {
         this.clearCallState();
       }
 
-      console.log(`[CallManager] Call ended, cleaned up streams for room ${roomId}`);
+      console.log(
+        `[CallManager] Call ended, cleaned up streams for room ${roomId}`
+      );
     };
 
     groupCall.on(GroupCallEvent.GroupCallStateChanged, (newState: string) => {
@@ -291,8 +330,8 @@ export class CallManager {
       }
     });
 
-    console.log(`[CallManager] Set up call stream observable for room ${roomId}`);
+    console.log(
+      `[CallManager] Set up call stream observable for room ${roomId}`
+    );
   }
-
 }
-

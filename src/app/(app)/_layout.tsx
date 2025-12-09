@@ -1,19 +1,19 @@
-import { MaterialIcons } from "@expo/vector-icons";
-import { Redirect, Tabs, useRouter } from "expo-router";
-import React from "react";
-import { View } from "react-native";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { Tabs, useRouter } from "expo-router";
+import { useColorScheme, View } from "react-native";
 import { HomeButton, LogoutButton } from "../../components";
-import { useAppDispatch, useAppSelector } from "../../store";
+import { Colors } from "../../constants/Colors";
+import { useProtectedRoute } from "../../hooks/useProtectedRoute";
+import { useAppDispatch } from "../../store";
 import { logout } from "../../store/slices/matrixAuthSlice";
 
-export default function AppLayout() {
+export default function AppTabLayout() {
+  useProtectedRoute(); // Guard the entire (app) group
+
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { isAuthenticated } = useAppSelector((state) => state.matrixAuth);
-
-  if (!isAuthenticated) {
-    return <Redirect href="/(auth)/login" />;
-  }
+  const colorScheme = useColorScheme() ?? "light";
+  const theme = Colors[colorScheme];
 
   const handleLogout = () => {
     dispatch(logout());
@@ -33,15 +33,16 @@ export default function AppLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerRight: headerRight,
+        tabBarActiveTintColor: theme.tint,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "Join Room",
+          headerRight: headerRight,
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="meeting-room" size={size} color={color} />
+            <FontAwesome name="home" size={size} color={color} />
           ),
         }}
       />
@@ -49,8 +50,9 @@ export default function AppLayout() {
         name="create-room"
         options={{
           title: "Create Room",
+          headerRight: headerRight,
           tabBarIcon: ({ color, size }) => (
-            <MaterialIcons name="add-circle" size={size} color={color} />
+            <FontAwesome name="plus-square" size={size} color={color} />
           ),
         }}
       />

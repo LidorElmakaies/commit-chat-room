@@ -66,7 +66,12 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }).concat(sessionMiddleware, messageListenerMiddleware, roomSyncMiddleware, callStreamMiddleware),
+    }).concat(
+      sessionMiddleware,
+      messageListenerMiddleware,
+      roomSyncMiddleware,
+      callStreamMiddleware
+    ),
 });
 
 export const persistor = persistStore(store);

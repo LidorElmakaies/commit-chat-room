@@ -1,4 +1,3 @@
-import { useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { FlatList, StyleSheet, useColorScheme, View } from "react-native";
 import {
@@ -9,36 +8,23 @@ import {
 } from "../../../components";
 import { Colors } from "../../../constants/Colors";
 import { commonStyles } from "../../../constants/Styles";
+import { useRoomGuard } from "../../../hooks/useRoomGuard";
 import { useAppDispatch, useAppSelector } from "../../../store";
-import {
-  deselectRoom,
-  selectRoom,
-  sendMessage,
-} from "../../../store/slices/roomSlice";
+import { sendMessage } from "../../../store/slices/roomSlice";
 import { Message, MessageType } from "../../../types";
 
 export default function RoomIndex() {
-  const { roomId } = useLocalSearchParams<{ roomId: string }>();
+  const { currentSelectedRoomId, currentRoomMessages } = useAppSelector(
+    (state) => state.room
+  );
+  const room = useRoomGuard(currentSelectedRoomId);
   const dispatch = useAppDispatch();
   const [messageText, setMessageText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const flatListRef = useRef<FlatList>(null);
-  const { currentSelectedRoomId, currentRoomMessages } = useAppSelector(
-    (state) => state.room
-  );
   const { userId } = useAppSelector((state) => state.matrixAuth);
   const colorScheme = useColorScheme() ?? "light";
   const theme = Colors[colorScheme] ?? Colors.light;
-
-  useEffect(() => {
-    if (roomId) {
-      dispatch(selectRoom(roomId));
-
-      return () => {
-        dispatch(deselectRoom());
-      };
-    }
-  }, [roomId, dispatch]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -48,6 +34,11 @@ export default function RoomIndex() {
       }, 100);
     }
   }, [currentRoomMessages.length]);
+
+  if (!room) {
+    // Render nothing while the guard redirects
+    return null;
+  }
 
   const formatSenderName = (senderId: string): string => {
     // Extract username from Matrix ID format: @username:server.com

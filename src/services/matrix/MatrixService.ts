@@ -216,7 +216,12 @@ class MatrixService {
     if (!this.client || !this.callManager) {
       throw new Error("Client not initialized");
     }
-    return await this.callManager.joinCall(roomId, video, audioMuted, videoMuted);
+    return await this.callManager.joinCall(
+      roomId,
+      video,
+      audioMuted,
+      videoMuted
+    );
   }
 
   /**
