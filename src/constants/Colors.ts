@@ -22,6 +22,16 @@ export const Colors = {
     tabIconSelected: tintColorLight,
     border: "#E2E8F0", // Slate 200
     error: "#EF4444", // Red 500
+
+    // Button variants
+    success: "#2e7d32", // Green 800 (darker for light mode)
+    danger: "#c62828", // Red 800 (darker for light mode)
+    buttonText: "#FFFFFF", // White text on colored buttons
+
+    // Video components
+    videoBackground: "#000000", // Black for video containers
+    videoOverlay: "rgba(0, 0, 0, 0.7)", // Semi-transparent overlay for text
+    videoPlaceholder: "#1a1a1a", // Dark grey for empty video
   },
   dark: {
     primary: "#8B5CF6", // Violet 500 (Purple)
@@ -36,6 +46,16 @@ export const Colors = {
     tabIconSelected: tintColorDark,
     border: "#2E2C3D", // Dark Purple Border
     error: "#CF6679", // Light Red
+
+    // Button variants
+    success: "#66bb6a", // Green 400 (lighter for dark mode)
+    danger: "#ef5350", // Red 400 (lighter for dark mode)
+    buttonText: "#FFFFFF", // White text on colored buttons
+
+    // Video components
+    videoBackground: "#000000", // Black for video containers
+    videoOverlay: "rgba(0, 0, 0, 0.7)", // Semi-transparent overlay for text
+    videoPlaceholder: "#1a1a1a", // Dark grey for empty video
   },
 };
 

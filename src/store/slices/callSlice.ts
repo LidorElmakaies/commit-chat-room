@@ -1,10 +1,11 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { matrixService } from "../../services/matrix/MatrixService";
-import { FetchState, UserMediaStream } from "../../types";
+import { FetchState } from "../../types";
 import { RoomState } from "./roomSlice";
 
 export interface CallState {
-  streams: UserMediaStream[]; // Streams for the currently selected room's call
+  activeCallRoomId: string | null; // Room ID of the active call
+  isJoined: boolean; // Whether we're currently in a call
   loading: FetchState;
   error: string | null;
   audioMuted: boolean; // Current microphone mute state
@@ -12,7 +13,8 @@ export interface CallState {
 }
 
 const initialState: CallState = {
-  streams: [],
+  activeCallRoomId: null,
+  isJoined: false,
   loading: FetchState.Idle,
   error: null,
   audioMuted: true,
@@ -21,22 +23,21 @@ const initialState: CallState = {
 
 export const joinCall = createAsyncThunk(
   "call/joinCall",
-  async (
-    { roomId, video = true, audioMuted = true, videoMuted = true }: { roomId: string; video?: boolean; audioMuted?: boolean; videoMuted?: boolean },
-    { getState, rejectWithValue }
-  ) => {
+  async (roomId: string, { getState, rejectWithValue }) => {
     try {
       const state = getState() as { room: RoomState };
       const currentRoomId = state.room.currentSelectedRoomId;
 
       if (currentRoomId !== roomId) {
-        return rejectWithValue("Can only join call for currently selected room");
+        return rejectWithValue(
+          "Can only join call for currently selected room"
+        );
       }
 
       console.log("[CallSlice] Joining call in room", roomId);
-      const callData = await matrixService.joinCall(roomId, video, audioMuted, videoMuted);
+      const callData = await matrixService.joinCall(roomId);
       console.log("[CallSlice] Call joined successfully", callData);
-      return { roomId, callId: callData.callId, audioMuted, videoMuted };
+      return { roomId, callId: callData.callId };
     } catch (error: any) {
       console.error("[CallSlice] Failed to join call", error);
       return rejectWithValue(error.message || "Failed to join call");
@@ -65,7 +66,9 @@ export const setAudioMuted = createAsyncThunk(
     try {
       console.log(`[CallSlice] Setting audio muted: ${muted}`);
       const success = await matrixService.setMicrophoneMuted(muted);
-      console.log(`[CallSlice] Audio mute ${muted ? "enabled" : "disabled"}: ${success}`);
+      console.log(
+        `[CallSlice] Audio mute ${muted ? "enabled" : "disabled"}: ${success}`
+      );
       return { muted, success };
     } catch (error: any) {
       console.error("[CallSlice] Failed to set audio mute", error);
@@ -80,7 +83,9 @@ export const setVideoMuted = createAsyncThunk(
     try {
       console.log(`[CallSlice] Setting video muted: ${muted}`);
       const success = await matrixService.setVideoMuted(muted);
-      console.log(`[CallSlice] Video mute ${muted ? "enabled" : "disabled"}: ${success}`);
+      console.log(
+        `[CallSlice] Video mute ${muted ? "enabled" : "disabled"}: ${success}`
+      );
       return { muted, success };
     } catch (error: any) {
       console.error("[CallSlice] Failed to set video mute", error);
@@ -96,13 +101,6 @@ const callSlice = createSlice({
     clearCallError: (state) => {
       state.error = null;
     },
-    updateCallStreams: (state, action: PayloadAction<UserMediaStream[]>) => {
-      // The middleware will only dispatch this if roomId matches currentSelectedRoomId
-      state.streams = action.payload;
-    },
-    clearCallStreams: (state) => {
-      state.streams = [];
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -113,8 +111,11 @@ const callSlice = createSlice({
       .addCase(joinCall.fulfilled, (state, action) => {
         state.loading = FetchState.Succeeded;
         state.error = null;
-        state.audioMuted = action.payload.audioMuted;
-        state.videoMuted = action.payload.videoMuted;
+        state.isJoined = true;
+        state.activeCallRoomId = action.payload.roomId;
+        // Reset to default mute states
+        state.audioMuted = true;
+        state.videoMuted = false;
       })
       .addCase(joinCall.rejected, (state, action) => {
         state.loading = FetchState.Failed;
@@ -125,7 +126,8 @@ const callSlice = createSlice({
       })
       .addCase(leaveCall.fulfilled, (state) => {
         state.loading = FetchState.Succeeded;
-        state.streams = [];
+        state.isJoined = false;
+        state.activeCallRoomId = null;
         state.error = null;
         state.audioMuted = true;
         state.videoMuted = true;
@@ -159,6 +161,5 @@ const callSlice = createSlice({
   },
 });
 
-export const { clearCallError, updateCallStreams, clearCallStreams } = callSlice.actions;
+export const { clearCallError } = callSlice.actions;
 export default callSlice.reducer;
-

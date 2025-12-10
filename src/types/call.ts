@@ -1,3 +1,5 @@
+import { MediaStream } from "@livekit/react-native-webrtc";
+
 /**
  * Custom types for video call streams
  * Abstracts away Matrix-specific objects
@@ -8,4 +10,3 @@ export interface UserMediaStream {
   userId: string;
   isLocal: boolean;
 }
-

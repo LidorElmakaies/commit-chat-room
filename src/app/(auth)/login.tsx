@@ -31,6 +31,11 @@ export default function LoginScreen() {
     },
   });
 
+  // Clear error state when entering this screen (fresh state)
+  useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
+
   // This logic is now handled by the useAuthGuard hook
   // useEffect(() => {
   //   if (isAuthenticated) {

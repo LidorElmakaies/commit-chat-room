@@ -79,3 +79,38 @@ export const themedListStyles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
+/**
+ * Video Component Styles
+ *
+ * Note: Video backgrounds are always black regardless of theme for optimal viewing.
+ * See Colors.videoBackground and Colors.videoOverlay for theme-specific values.
+ */
+export const themedVideoStyles = StyleSheet.create({
+  participantCard: {
+    width: 160,
+    height: 240,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#000", // Always black for video (Colors.videoBackground)
+  },
+  videoStream: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+  },
+  userInfoOverlay: {
+    position: "absolute",
+    bottom: 8,
+    left: 8,
+    backgroundColor: "rgba(0, 0, 0, 0.7)", // Semi-transparent (Colors.videoOverlay)
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  userNameText: {
+    color: "#FFFFFF", // Always white text on video overlay
+    fontSize: 12,
+    fontWeight: "600",
+  },
+});

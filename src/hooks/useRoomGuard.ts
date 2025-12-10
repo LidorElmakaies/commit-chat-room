@@ -7,22 +7,29 @@ import { useAppSelector } from "../store";
  * It checks if a room with the given ID exists in the Redux store.
  * If the room doesn't exist, it redirects the user to the home/join screen.
  *
- * @param roomId The ID of the room to check.
+ * @param roomId The ID of the room to check. If not provided, uses currentSelectedRoomId from Redux.
  * @returns The room object if it exists, otherwise null.
  */
-export function useRoomGuard(roomId: string | undefined | null) {
+export function useRoomGuard(roomId?: string | null) {
   const router = useRouter();
+
+  // If no roomId is provided, read from Redux
+  const currentSelectedRoomId = useAppSelector(
+    (state) => state.room.currentSelectedRoomId
+  );
+  const effectiveRoomId = roomId ?? currentSelectedRoomId;
+
   const room = useAppSelector((state) =>
-    roomId ? state.room.rooms[roomId] : undefined
+    effectiveRoomId ? state.room.rooms[effectiveRoomId] : undefined
   );
 
   useEffect(() => {
     // Only redirect if we have a roomId but no corresponding room was found.
     // If roomId is null/undefined, we might be in the process of navigating, so we don't redirect.
-    if (roomId && !room) {
+    if (effectiveRoomId && !room) {
       router.replace("/(app)");
     }
-  }, [roomId, room, router]);
+  }, [effectiveRoomId, room, router]);
 
   return room;
 }

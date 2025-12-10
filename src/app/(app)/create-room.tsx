@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { StyleSheet, View } from "react-native";
 import {
@@ -13,13 +13,18 @@ import {
 } from "../../components";
 import { commonStyles } from "../../constants/Styles";
 import { useAppDispatch, useAppSelector } from "../../store";
-import { createRoom } from "../../store/slices/roomSlice";
+import { clearRoomError, createRoom } from "../../store/slices/roomSlice";
 import { CreateRoomOptions, FetchState, RoomVisibility } from "../../types";
 
 const CreateRoomScreen = () => {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { loading, error } = useAppSelector((state) => state.room);
+
+  // Clear error state when entering this screen (fresh state)
+  useEffect(() => {
+    dispatch(clearRoomError());
+  }, [dispatch]);
 
   const {
     control,
@@ -76,17 +81,24 @@ const CreateRoomScreen = () => {
           control={control}
           name="visibility"
           rules={{ required: "Visibility is required" }}
-          render={({ field: { onChange, value } }) => (
-            <View>
-              <ThemedDropdown
-                options={Object.values(RoomVisibility)}
-                onSelect={onChange}
-                value={value}
-                placeholder="Select Visibility"
-              />
-              <ThemedErrorMessage message={errors.visibility?.message} />
-            </View>
-          )}
+          render={({ field: { onChange, value } }) => {
+            const visibilityOptions = [
+              RoomVisibility.Public,
+              RoomVisibility.Private,
+            ];
+            return (
+              <View>
+                <ThemedDropdown
+                  options={visibilityOptions}
+                  onSelect={onChange}
+                  value={value}
+                  placeholder="Select Visibility"
+                  minHeight={150}
+                />
+                <ThemedErrorMessage message={errors.visibility?.message} />
+              </View>
+            );
+          }}
         />
         <ThemedErrorMessage message={error ?? undefined} />
         <ThemedButton

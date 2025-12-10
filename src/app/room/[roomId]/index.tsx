@@ -10,14 +10,14 @@ import { Colors } from "../../../constants/Colors";
 import { commonStyles } from "../../../constants/Styles";
 import { useRoomGuard } from "../../../hooks/useRoomGuard";
 import { useAppDispatch, useAppSelector } from "../../../store";
-import { sendMessage } from "../../../store/slices/roomSlice";
+import { clearRoomError, sendMessage } from "../../../store/slices/roomSlice";
 import { Message, MessageType } from "../../../types";
 
 export default function RoomIndex() {
   const { currentSelectedRoomId, currentRoomMessages } = useAppSelector(
     (state) => state.room
   );
-  const room = useRoomGuard(currentSelectedRoomId);
+  const room = useRoomGuard(); // Reads currentSelectedRoomId from Redux internally
   const dispatch = useAppDispatch();
   const [messageText, setMessageText] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -25,6 +25,11 @@ export default function RoomIndex() {
   const { userId } = useAppSelector((state) => state.matrixAuth);
   const colorScheme = useColorScheme() ?? "light";
   const theme = Colors[colorScheme] ?? Colors.light;
+
+  // Clear error state when entering this screen (fresh state)
+  useEffect(() => {
+    dispatch(clearRoomError());
+  }, [dispatch]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import {
   ThemedButton,
@@ -11,7 +11,8 @@ import {
 } from "../../components";
 import { commonStyles } from "../../constants/Styles";
 import { useAppDispatch, useAppSelector } from "../../store";
-import { joinRoom } from "../../store/slices/roomSlice";
+import { clearCallError } from "../../store/slices/callSlice";
+import { clearRoomError, joinRoom } from "../../store/slices/roomSlice";
 import { FetchState } from "../../types";
 
 const JoinRoomScreen = () => {
@@ -19,6 +20,12 @@ const JoinRoomScreen = () => {
   const { rooms, loading, error } = useAppSelector((state) => state.room);
   const dispatch = useAppDispatch();
   const router = useRouter();
+
+  // Clear all errors when entering home screen (fresh state)
+  useEffect(() => {
+    dispatch(clearRoomError());
+    dispatch(clearCallError());
+  }, [dispatch]);
 
   const handleJoinRoom = async () => {
     if (roomId.trim()) {

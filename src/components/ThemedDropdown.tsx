@@ -1,3 +1,5 @@
+import { MaterialIcons } from "@expo/vector-icons";
+import { useTheme } from "@react-navigation/native";
 import React, { useState } from "react";
 import {
   Modal,
@@ -5,11 +7,9 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { useTheme } from "@react-navigation/native";
-import { MaterialIcons } from "@expo/vector-icons";
 import { themedDropdownStyles } from "../constants/ComponentStyles";
-import ThemedList from "./ThemedList";
 import { ThemedText } from "./text";
+import ThemedList from "./ThemedList";
 import ThemedView from "./ThemedView";
 
 interface ThemedDropdownProps {
@@ -17,6 +17,7 @@ interface ThemedDropdownProps {
   onSelect: (option: string) => void;
   placeholder?: string;
   value?: string;
+  minHeight?: number; // Minimum height for the dropdown modal
 }
 
 export default function ThemedDropdown({
@@ -24,6 +25,7 @@ export default function ThemedDropdown({
   onSelect,
   placeholder = "Select an option",
   value,
+  minHeight = 200, // Default minHeight for better visibility
 }: ThemedDropdownProps) {
   const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
@@ -64,13 +66,19 @@ export default function ThemedDropdown({
         <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
           <View style={themedDropdownStyles.modalOverlay}>
             <TouchableWithoutFeedback>
-              <ThemedView style={themedDropdownStyles.modalContent}>
-                <ThemedList
-                  data={options.map((option) => ({
-                    label: option,
-                    onItemPress: () => handleSelect(option),
-                  }))}
-                />
+              <ThemedView
+                style={[themedDropdownStyles.modalContent, { minHeight }]}
+              >
+                {options.length > 0 ? (
+                  <ThemedList
+                    data={options.map((option) => ({
+                      label: option,
+                      onItemPress: () => handleSelect(option),
+                    }))}
+                  />
+                ) : (
+                  <ThemedText>No options available</ThemedText>
+                )}
               </ThemedView>
             </TouchableWithoutFeedback>
           </View>

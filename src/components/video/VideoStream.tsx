@@ -1,6 +1,7 @@
-import React, { useEffect } from "react";
-import { StyleSheet, View, ViewStyle } from "react-native";
-import { MediaStream, RTCView } from "react-native-webrtc";
+import { MediaStream, RTCView } from "@livekit/react-native-webrtc";
+import React from "react";
+import { StyleSheet, useColorScheme, View, ViewStyle } from "react-native";
+import { Colors } from "../../constants/Colors";
 
 interface VideoStreamProps {
   stream: MediaStream | null;
@@ -12,7 +13,7 @@ interface VideoStreamProps {
 /**
  * VideoStream Component
  *
- * Renders a WebRTC video stream using react-native-webrtc's RTCView.
+ * Renders a WebRTC video stream using @livekit/react-native-webrtc's RTCView.
  * Handles stream URL conversion and local mirroring.
  */
 export default function VideoStream({
@@ -21,16 +22,19 @@ export default function VideoStream({
   objectFit = "cover",
   style,
 }: VideoStreamProps) {
-  useEffect(() => {
-    if (stream) {
-      console.log(
-        `[VideoStream] Rendering stream: ${stream.toURL()}, isLocal: ${isLocal}`
-      );
-    }
-  }, [stream, isLocal]);
+  const colorScheme = useColorScheme() ?? "light";
+  const theme = Colors[colorScheme];
 
   if (!stream) {
-    return <View style={[styles.container, styles.placeholder, style]} />;
+    return (
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: theme.videoPlaceholder },
+          style,
+        ]}
+      />
+    );
   }
 
   return (
@@ -38,7 +42,11 @@ export default function VideoStream({
       streamURL={stream.toURL()}
       mirror={isLocal}
       objectFit={objectFit}
-      style={[styles.container, style]}
+      style={[
+        styles.container,
+        { backgroundColor: theme.videoBackground },
+        style,
+      ]}
       zOrder={isLocal ? 1 : 0}
     />
   );
@@ -48,9 +56,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     overflow: "hidden",
-    backgroundColor: "#000", // Black background for video
-  },
-  placeholder: {
-    backgroundColor: "#1a1a1a",
   },
 });

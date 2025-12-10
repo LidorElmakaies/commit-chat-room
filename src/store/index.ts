@@ -18,7 +18,6 @@ import matrixAuthReducer, { MatrixAuthState } from "./slices/matrixAuthSlice";
 import roomReducer from "./slices/roomSlice";
 
 import {
-  callStreamMiddleware,
   messageListenerMiddleware,
   roomSyncMiddleware,
   sessionMiddleware,
@@ -66,12 +65,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }).concat(
-      sessionMiddleware,
-      messageListenerMiddleware,
-      roomSyncMiddleware,
-      callStreamMiddleware
-    ),
+    }).concat(sessionMiddleware, messageListenerMiddleware, roomSyncMiddleware),
 });
 
 export const persistor = persistStore(store);

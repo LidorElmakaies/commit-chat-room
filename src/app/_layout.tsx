@@ -1,3 +1,4 @@
+import { registerGlobals } from "@livekit/react-native";
 import {
   DarkTheme,
   DefaultTheme,
@@ -11,6 +12,7 @@ import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import "../../polyfills";
 import { persistor, store } from "../store";
+registerGlobals();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
