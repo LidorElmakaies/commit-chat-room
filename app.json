@@ -26,6 +26,7 @@
       "favicon": "./src/assets/images/favicon.png"
     },
     "plugins": [
+      "@config-plugins/react-native-webrtc",
       "expo-router",
       [
         "expo-splash-screen",
