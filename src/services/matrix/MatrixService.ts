@@ -25,6 +25,13 @@ import { CallManager } from "./CallManager";
 import { IEventHandler } from "./handlers/IEventHandler";
 import { RoomMessageHandler } from "./handlers/roomMessageHandler";
 import { SyncEventHandler } from "./handlers/syncEventHandler";
+
+// Define the response type for LiveKit JWT Service
+interface LiveKitCredentials {
+  token: string;
+  livekit_service_url: string;
+}
+
 /**
  * Matrix Service
  *
@@ -46,6 +53,9 @@ class MatrixService {
 
   // Call manager - handles all group call functionality
   private callManager: CallManager | null = null;
+
+  // Cache for the discovered LiveKit Service URL
+  private liveKitServiceUrl: string | null = null;
 
   constructor(homeserverUrl: string = "https://matrix.org") {
     this.homeserverUrl = homeserverUrl;
@@ -69,7 +79,7 @@ class MatrixService {
 
     // Clean up call manager
     if (this.callManager) {
-      this.callManager.cleanup();
+      this.callManager.leaveCall();
       this.callManager = null;
     }
 
@@ -207,21 +217,14 @@ class MatrixService {
    * If already in a call in another room, leaves that call first
    */
   public async joinCall(
-    roomId: string,
-    video: boolean = true,
-    audioMuted: boolean = true,
-    videoMuted: boolean = true
+    roomId: string
   ): Promise<{ callId: string; roomId: string }> {
     await this.waitForClient();
     if (!this.client || !this.callManager) {
       throw new Error("Client not initialized");
     }
-    return await this.callManager.joinCall(
-      roomId,
-      video,
-      audioMuted,
-      videoMuted
-    );
+
+    return await this.callManager.joinCall(roomId);
   }
 
   /**
@@ -255,7 +258,8 @@ class MatrixService {
     if (!this.callManager) {
       throw new Error("Client not initialized");
     }
-    return await this.callManager.setMicrophoneMuted(muted);
+    this.callManager.toggleMic(muted);
+    return true;
   }
 
   /**
@@ -267,7 +271,8 @@ class MatrixService {
     if (!this.callManager) {
       throw new Error("Client not initialized");
     }
-    return await this.callManager.setVideoMuted(muted);
+    this.callManager.toggleCam(muted);
+    return true;
   }
   // =================================================================================================
   // PRIVATE METHODS
@@ -332,6 +337,101 @@ class MatrixService {
         take(1)
       )
     );
+  }
+
+  /**
+   * Fetches LiveKit credentials (token and url) by exchanging Matrix OpenID token
+   * with the homeserver's discovered LiveKit JWT service (MSC4143).
+   */
+  private async fetchLiveKitCredentials(
+    roomId: string
+  ): Promise<LiveKitCredentials> {
+    if (!this.client) throw new Error("Client not initialized");
+
+    // 1. Discover LiveKit Service URL (if not cached)
+    if (!this.liveKitServiceUrl) {
+      console.log(
+        "[MatrixService] Discovering LiveKit Service URL from homeserver..."
+      );
+      try {
+        const wellKnownUrl = `${this.homeserverUrl}/.well-known/matrix/client`;
+        const response = await fetch(wellKnownUrl);
+        if (!response.ok)
+          throw new Error(`Failed to fetch .well-known: ${response.status}`);
+
+        const config = await response.json();
+        const foci = config["org.matrix.msc4143.rtc_foci"];
+
+        if (Array.isArray(foci)) {
+          const liveKitConfig = foci.find((f: any) => f.type === "livekit");
+          if (liveKitConfig && liveKitConfig.livekit_service_url) {
+            this.liveKitServiceUrl = liveKitConfig.livekit_service_url;
+            console.log(
+              `[MatrixService] Discovered LiveKit Service URL: ${this.liveKitServiceUrl}`
+            );
+          }
+        }
+
+        // Fallback/Default for matrix.org if discovery fails or is missing
+        if (
+          !this.liveKitServiceUrl &&
+          this.homeserverUrl.includes("matrix.org")
+        ) {
+          this.liveKitServiceUrl = "https://livekit-jwt.call.matrix.org";
+          console.log(
+            `[MatrixService] Using default matrix.org LiveKit Service URL: ${this.liveKitServiceUrl}`
+          );
+        }
+      } catch (err) {
+        console.warn("[MatrixService] Discovery failed, trying default:", err);
+        // Fallback
+        this.liveKitServiceUrl = "https://livekit-jwt.call.matrix.org";
+      }
+    }
+
+    if (!this.liveKitServiceUrl) {
+      throw new Error(
+        "Could not discover LiveKit Service URL and no default available."
+      );
+    }
+
+    // 2. Get OpenID Token from Matrix
+    console.log("[MatrixService] Requesting OpenID token...");
+    const openIdToken = await this.client.getOpenIdToken();
+
+    // 3. Exchange OpenID for LiveKit Credentials
+    // Endpoint typically /v1/token or /livekit/token
+    const tokenEndpoint = `${this.liveKitServiceUrl}/v1/token`;
+
+    console.log(
+      `[MatrixService] Exchanging OpenID token at ${tokenEndpoint}...`
+    );
+
+    const exchangeResponse = await fetch(tokenEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        room_id: roomId,
+        openid_token: openIdToken,
+      }),
+    });
+
+    if (!exchangeResponse.ok) {
+      const text = await exchangeResponse.text();
+      throw new Error(
+        `LiveKit token exchange failed (${exchangeResponse.status}): ${text}`
+      );
+    }
+
+    const data = await exchangeResponse.json();
+    console.log("[MatrixService] Received LiveKit credentials");
+
+    return {
+      token: data.token,
+      livekit_service_url: data.service_url, // Note: this is the WSS url
+    };
   }
 }
 

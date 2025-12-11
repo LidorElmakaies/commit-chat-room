@@ -13,3 +13,4 @@ export const roomSyncMiddleware: Middleware = (store) => (next) => (action) => {
 
   return result;
 };
+
